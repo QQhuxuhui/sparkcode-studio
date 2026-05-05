@@ -3,10 +3,12 @@ import { useUIStore } from '../../../../stores/uiStore';
 import { useRefStore } from '../../../../stores/refStore';
 import { isGeminiImageModel } from '../../../../data/models';
 import { putMessage, putNode, putImage, db } from '../../../../services/db';
-import { callGptImageGen, callGptImageEdit, callGeminiChatImage } from '../../../../services/api';
+import { callGptImageGen, callGptImageEdit, callGeminiChatImage, callPolishPrompt } from '../../../../services/api';
 import { toast, fileToDataUrl } from '../../../../lib/utils';
 import { RefPills } from './RefPills';
 import { MentionPopover } from './MentionPopover';
+import { PolishModal } from '../Modals/PolishModal';
+import { STYLE_TEMPLATES } from '../../../../data/templates';
 import type { GeneratedImage } from '../../../../types';
 
 export function InputArea() {
@@ -21,9 +23,35 @@ export function InputArea() {
   const [aspect, setAspect]   = useState('1:1');
   const [resolution, setResolution] = useState('1K');
   const [busy, setBusy] = useState(false);
+  const [polishBusy,   setPolishBusy]   = useState(false);
+  const [polishModal,  setPolishModal]  = useState<{ original: string; polished: string } | null>(null);
 
   const taRef       = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function onPolish() {
+    const original = prompt.trim();
+    if (!original) { toast('请先输入要润色的提示词'); return; }
+    if (polishBusy) return;
+    setPolishBusy(true);
+    try {
+      const polished = await callPolishPrompt(original);
+      setPolishModal({ original, polished });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast(`润色失败：${msg}`);
+    } finally {
+      setPolishBusy(false);
+    }
+  }
+
+  function applyPreset(presetId: string) {
+    if (!presetId) return;
+    const preset = STYLE_TEMPLATES.find((t) => t.id === presetId);
+    if (!preset) return;
+    const cur = prompt.trim();
+    setPrompt(cur ? `${cur} · ${preset.promptSuffix}` : preset.promptSuffix);
+  }
 
   const isGem = isGeminiImageModel(selectedModel);
 
@@ -157,6 +185,24 @@ export function InputArea() {
         <MentionPopover textareaRef={taRef} onPick={(img) => addRef(img.id)} />
       </div>
       <div className="flex gap-2 items-center mt-2.5 flex-wrap">
+        <button
+          onClick={() => void onPolish()}
+          disabled={polishBusy}
+          title="提示词润色（用 gpt-5.5 重写一遍 prompt）"
+          className="btn-ghost py-1.5 px-3"
+        >
+          {polishBusy ? '✨ 润色中…' : '✨ 润色'}
+        </button>
+        <select
+          onChange={(e) => { applyPreset(e.target.value); e.target.value = ''; }}
+          defaultValue=""
+          className="field-select px-2.5 py-1.5 text-[12.5px]"
+        >
+          <option value="">🎨 风格预设</option>
+          {STYLE_TEMPLATES.map((t) => (
+            <option key={t.id} value={t.id}>{t.name}</option>
+          ))}
+        </select>
         <label className="text-[12px] text-muted inline-flex items-center gap-1">
           数量
           <input
@@ -214,6 +260,16 @@ export function InputArea() {
           {busy ? '生成中…' : '发送'}
         </button>
       </div>
+
+      {polishModal && (
+        <PolishModal
+          original={polishModal.original}
+          polished={polishModal.polished}
+          onAdopt={(text)     => { setPrompt(text); setPolishModal(null); }}
+          onAdoptEdit={(text) => { setPrompt(text); setPolishModal(null); taRef.current?.focus(); }}
+          onClose={()         => setPolishModal(null)}
+        />
+      )}
     </div>
   );
 }
