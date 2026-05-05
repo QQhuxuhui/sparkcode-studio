@@ -1,15 +1,15 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useUIStore } from '../../../../stores/uiStore';
 import { useRefStore } from '../../../../stores/refStore';
 import { isGeminiImageModel } from '../../../../data/models';
 import { putMessage, putNode, putImage, db } from '../../../../services/db';
 import { callGptImageGen, callGptImageEdit, callGeminiChatImage, callPolishPrompt } from '../../../../services/api';
+import { listTemplates } from '../../../../services/templates';
 import { toast, fileToDataUrl } from '../../../../lib/utils';
 import { RefPills } from './RefPills';
 import { MentionPopover } from './MentionPopover';
 import { PolishModal } from '../Modals/PolishModal';
-import { STYLE_TEMPLATES } from '../../../../data/templates';
-import type { GeneratedImage } from '../../../../types';
+import type { GeneratedImage, StyleTemplate } from '../../../../types';
 
 export function InputArea() {
   const selectedModel = useUIStore((s) => s.selectedModel);
@@ -25,9 +25,28 @@ export function InputArea() {
   const [busy, setBusy] = useState(false);
   const [polishBusy,   setPolishBusy]   = useState(false);
   const [polishModal,  setPolishModal]  = useState<{ original: string; polished: string } | null>(null);
+  const [presets, setPresets] = useState<StyleTemplate[]>([]);
 
   const taRef       = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Load top templates as quick presets in the dropdown.
+  // The full template browser lives in the 模板库 workspace tab.
+  useEffect(() => {
+    void listTemplates().then((all) => setPresets(all.slice(0, 12))).catch(() => { /* silent */ });
+  }, []);
+
+  // Apply-template events fired from TemplatesTab → append to current prompt.
+  useEffect(() => {
+    function onApply(e: Event) {
+      const t = (e as CustomEvent<StyleTemplate>).detail;
+      const suffix = t.promptSuffix ?? t.promptTemplate ?? '';
+      if (!suffix) return;
+      setPrompt((cur) => (cur.trim() ? `${cur.trim()} · ${suffix}` : suffix));
+    }
+    window.addEventListener('sparkcode:apply-template', onApply as EventListener);
+    return () => window.removeEventListener('sparkcode:apply-template', onApply as EventListener);
+  }, []);
 
   async function onPolish() {
     const original = prompt.trim();
@@ -47,8 +66,8 @@ export function InputArea() {
 
   function applyPreset(presetId: string) {
     if (!presetId) return;
-    const preset = STYLE_TEMPLATES.find((t) => t.id === presetId);
-    if (!preset) return;
+    const preset = presets.find((t) => t.id === presetId);
+    if (!preset?.promptSuffix) return;
     const cur = prompt.trim();
     setPrompt(cur ? `${cur} · ${preset.promptSuffix}` : preset.promptSuffix);
   }
@@ -197,9 +216,10 @@ export function InputArea() {
           onChange={(e) => { applyPreset(e.target.value); e.target.value = ''; }}
           defaultValue=""
           className="field-select px-2.5 py-1.5 text-[12.5px]"
+          title="快捷预设（完整模板库见右侧「模板库」tab）"
         >
           <option value="">🎨 风格预设</option>
-          {STYLE_TEMPLATES.map((t) => (
+          {presets.map((t) => (
             <option key={t.id} value={t.id}>{t.name}</option>
           ))}
         </select>

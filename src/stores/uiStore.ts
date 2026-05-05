@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type TabId = 'big' | 'tree' | 'library' | 'mask';
+export type TabId = 'big' | 'tree' | 'library' | 'mask' | 'templates';
 
 type UIStore = {
   activeTab: TabId;

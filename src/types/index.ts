@@ -56,12 +56,6 @@ export type KeyGroup = {
   pattern?: RegExp;
 };
 
-// Style template — for the upcoming template library
-export type StyleTemplate = {
-  id: string;
-  name: string;
-  category: string;
-  promptSuffix: string;        // appended to user prompt with ' · '
-  exampleImage?: string;       // optional preview URL
-  supportedModels?: string[];  // empty = all models
-};
+// StyleTemplate now lives in shared/types.ts (used by backend API too).
+// Re-export for convenience so existing src/ imports keep working.
+export type { StyleTemplate, TemplateCategory } from '../../shared/types';

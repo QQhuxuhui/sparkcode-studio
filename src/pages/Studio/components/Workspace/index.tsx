@@ -4,12 +4,14 @@ import { BigImageTab } from './BigImageTab';
 import { TreeTab } from './TreeTab';
 import { LibraryTab } from './LibraryTab';
 import { MaskTab } from './MaskTab';
+import { TemplatesTab } from './TemplatesTab';
 
 const ALL_TABS: { id: TabId; label: string; modelGated?: boolean }[] = [
-  { id: 'big',     label: '大图' },
-  { id: 'tree',    label: '分支树' },
-  { id: 'library', label: '图库' },
-  { id: 'mask',    label: '区域编辑', modelGated: true },
+  { id: 'big',       label: '大图' },
+  { id: 'tree',      label: '分支树' },
+  { id: 'library',   label: '图库' },
+  { id: 'templates', label: '模板库' },
+  { id: 'mask',      label: '区域编辑', modelGated: true },
 ];
 
 export function Workspace() {
@@ -40,8 +42,9 @@ export function Workspace() {
       <div className="flex-1 overflow-auto p-6">
         {activeTab === 'big'     && <BigImageTab />}
         {activeTab === 'tree'    && <TreeTab />}
-        {activeTab === 'library' && <LibraryTab />}
-        {activeTab === 'mask'    && <MaskTab />}
+        {activeTab === 'library'   && <LibraryTab />}
+        {activeTab === 'templates' && <TemplatesTab />}
+        {activeTab === 'mask'      && <MaskTab />}
       </div>
     </section>
   );
