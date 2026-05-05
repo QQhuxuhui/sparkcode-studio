@@ -1,9 +1,11 @@
 type Props = {
   status: string;
   onOpenKeys: () => void;
+  onExport:   () => void;
+  onImport:   () => void;
 };
 
-export function Header({ status, onOpenKeys }: Props) {
+export function Header({ status, onOpenKeys, onExport, onImport }: Props) {
   return (
     <header className="flex items-center gap-3.5 px-6 bg-paper-warm border-b border-border relative">
       <span className="inline-flex items-center gap-3 font-sans text-[19px] font-semibold text-ink">
@@ -24,10 +26,10 @@ export function Header({ status, onOpenKeys }: Props) {
       <button onClick={onOpenKeys} className="btn-ghost py-1.5 px-3.5 text-[12.5px]">
         ⚙ 令牌
       </button>
-      <button disabled title="导出（即将上线）" className="btn-ghost py-1.5 px-3.5 text-[12.5px] opacity-50">
+      <button onClick={onExport} className="btn-ghost py-1.5 px-3.5 text-[12.5px]">
         ⬇ 导出
       </button>
-      <button disabled title="导入（即将上线）" className="btn-ghost py-1.5 px-3.5 text-[12.5px] opacity-50">
+      <button onClick={onImport} className="btn-ghost py-1.5 px-3.5 text-[12.5px]">
         ⬆ 导入
       </button>
       {/* 装订线 */}
