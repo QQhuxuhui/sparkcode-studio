@@ -1,20 +1,45 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../../../../services/db';
-import { fmtTime } from '../../../../lib/utils';
 import { useEffect, useRef } from 'react';
+import { db } from '../../../../services/db';
+import { fmtTime, toast } from '../../../../lib/utils';
+import { isGeminiImageModel, modelById } from '../../../../data/models';
+import { useRefStore } from '../../../../stores/refStore';
+import { useUIStore } from '../../../../stores/uiStore';
 
 export function ChatStream() {
   const messages = useLiveQuery(() => db.messages.orderBy('createdAt').toArray(), [], []);
   const images   = useLiveQuery(() => db.images.toArray(), [], []);
   const streamRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll on new message
+  const addRef         = useRefStore((s) => s.add);
+  const setActiveImage = useUIStore((s) => s.setActiveImage);
+  const setTab         = useUIStore((s) => s.setTab);
+  const selectedModel  = useUIStore((s) => s.selectedModel);
+
   useEffect(() => {
     const el = streamRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages?.length]);
 
   const imgMap = new Map((images ?? []).map((i) => [i.id, i]));
+
+  function onZoom(id: string) {
+    setActiveImage(id);
+    setTab('big');
+  }
+  function onEngageRef(id: string, shortId: string) {
+    addRef(id);
+    toast(`引用了 ${shortId}`);
+  }
+  function onEngageMask(id: string) {
+    if (!modelById(selectedModel)?.supportsMask) {
+      toast('当前模型不支持区域编辑，请切到 gpt-image-2');
+      return;
+    }
+    // F4 will wire maskStore here. For now just stash + switch tab.
+    useUIStore.setState({ activeImageId: id });
+    setTab('mask');
+  }
 
   return (
     <div ref={streamRef} className="flex-1 overflow-y-auto px-5 py-6">
@@ -40,36 +65,59 @@ export function ChatStream() {
             </div>
           );
         }
-        // assistant
+
+        // Assistant
+        const isGptImage = !isGeminiImageModel(m.model);
         return (
           <div key={m.id} className="mb-[18px]">
             <div className="text-[10px] text-muted mb-1.5 tracking-wide font-medium">
               <span className="font-mono text-ink-soft">{m.model}</span> · {fmtTime(m.createdAt)}
             </div>
             <div>
-              {m.imageIds.length > 0
-                ? m.imageIds.map((id) => {
-                    const img = imgMap.get(id);
-                    if (!img) return null;
-                    return (
-                      <div key={id} className="relative inline-block m-[3px]">
-                        <img
-                          src={img.dataUrl}
-                          className="w-[84px] h-[84px] object-cover rounded-[3px] cursor-zoom-in border border-border"
-                          style={{ boxShadow: 'var(--shadow-img)' }}
-                        />
-                        <span
-                          className="absolute bottom-1 left-1 text-white text-[10px] px-1.5 py-px rounded-[2px] font-medium tracking-wide"
-                          style={{ background: 'rgba(20,15,10,0.72)' }}
+              {m.imageIds.length > 0 ? (
+                m.imageIds.map((id) => {
+                  const img = imgMap.get(id);
+                  if (!img) return null;
+                  return (
+                    <div key={id} className="relative inline-block m-[3px] group">
+                      <img
+                        src={img.dataUrl}
+                        onClick={() => onZoom(id)}
+                        className="w-[84px] h-[84px] object-cover rounded-[3px] cursor-zoom-in border border-border"
+                        style={{ boxShadow: 'var(--shadow-img)' }}
+                      />
+                      <span
+                        className="absolute bottom-1 left-1 text-white text-[10px] px-1.5 py-px rounded-[2px] font-medium tracking-wide pointer-events-none"
+                        style={{ background: 'rgba(20,15,10,0.72)' }}
+                      >
+                        {img.shortId}
+                      </span>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onEngageRef(id, img.shortId); }}
+                        title="作为引用"
+                        className="absolute top-1 right-1 text-white text-[11px] leading-none px-1.5 py-1 rounded-[2px] border-0 cursor-pointer"
+                        style={{ background: 'rgba(20,15,10,0.7)' }}
+                      >
+                        ↩
+                      </button>
+                      {isGptImage && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onEngageMask(id); }}
+                          title="区域编辑"
+                          className="absolute top-1 right-7 text-white text-[11px] leading-none px-1.5 py-1 rounded-[2px] border-0 cursor-pointer"
+                          style={{ background: 'rgba(20,15,10,0.7)' }}
                         >
-                          {img.shortId}
-                        </span>
-                      </div>
-                    );
-                  })
-                : (m.error
-                    ? <span className="text-error text-[12px]">⚠ {m.error}</span>
-                    : <span className="text-muted text-[12px]">生成中…</span>)}
+                          🖌
+                        </button>
+                      )}
+                    </div>
+                  );
+                })
+              ) : m.error ? (
+                <span className="text-error text-[12px]">⚠ {m.error}</span>
+              ) : (
+                <span className="text-muted text-[12px]">生成中…</span>
+              )}
             </div>
           </div>
         );

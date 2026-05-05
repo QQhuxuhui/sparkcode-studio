@@ -6,10 +6,11 @@ import { ComposerToolbar } from './components/ChatPane/ComposerToolbar';
 import { InputArea } from './components/ChatPane/InputArea';
 import { Workspace } from './components/Workspace';
 import { KeyManagerModal } from './components/Modals/KeyManagerModal';
-import { db, clearAll } from '../../services/db';
+import { db, clearAll, putImage } from '../../services/db';
 import { hasAnyKey, migrateLegacyKeys } from '../../services/keys';
-import { toast } from '../../lib/utils';
+import { toast, fileToDataUrl } from '../../lib/utils';
 import { useUIStore } from '../../stores/uiStore';
+import { useRefStore } from '../../stores/refStore';
 
 export function Studio() {
   const [keyModal, setKeyModal] = useState<{ open: boolean; firstRun: boolean }>({
@@ -22,6 +23,33 @@ export function Studio() {
   useEffect(() => {
     migrateLegacyKeys();
     if (!hasAnyKey()) setKeyModal({ open: true, firstRun: true });
+  }, []);
+
+  // Page-level drag/drop — accepts image files anywhere in the page,
+  // ingests them as user-uploaded refs (auto-engaged via refStore).
+  useEffect(() => {
+    const onDragOver = (e: DragEvent) => { e.preventDefault(); };
+    const onDrop = async (e: DragEvent) => {
+      const files = Array.from(e.dataTransfer?.files ?? []);
+      const images = files.filter((f) => f.type.startsWith('image/'));
+      if (images.length === 0) return;
+      e.preventDefault();
+      for (const file of images) {
+        const dataUrl = await fileToDataUrl(file);
+        const rec = await putImage({
+          dataUrl, model: '(uploaded)', prompt: '', isUserUpload: true,
+          format: file.type.split('/')[1] || 'png',
+        });
+        useRefStore.getState().add(rec.id);
+      }
+      toast(`已上传 ${images.length} 张图`);
+    };
+    document.addEventListener('dragover', onDragOver);
+    document.addEventListener('drop', onDrop);
+    return () => {
+      document.removeEventListener('dragover', onDragOver);
+      document.removeEventListener('drop', onDrop);
+    };
   }, []);
 
   function onNewChat() {
