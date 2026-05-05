@@ -142,6 +142,16 @@ export function InputArea() {
               e.preventDefault(); void onSend();
             }
           }}
+          onDragOver={(e) => {
+            if (Array.from(e.dataTransfer.types).includes('text/conv-image-ref')) e.preventDefault();
+          }}
+          onDrop={(e) => {
+            const id = e.dataTransfer.getData('text/conv-image-ref');
+            if (id) {
+              e.preventDefault(); e.stopPropagation();
+              addRef(id);
+            }
+          }}
           disabled={busy}
         />
         <MentionPopover textareaRef={taRef} onPick={(img) => addRef(img.id)} />
