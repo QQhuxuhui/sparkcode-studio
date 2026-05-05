@@ -2,6 +2,21 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../../../services/db';
 import { useRefStore } from '../../../../stores/refStore';
 
+/**
+ * Removes an upload (u-prefix) image from IDB if and only if it isn't
+ * referenced by any persisted message. Generated images (g-prefix) and
+ * uploads that already participated in a sent message are left intact —
+ * deleting those would orphan conversation history.
+ */
+async function pruneOrphanUpload(id: string) {
+  const img = await db.images.get(id);
+  if (!img) return;
+  if (!img.shortId.startsWith('u')) return;
+  const allMsgs = await db.messages.toArray();
+  if (allMsgs.some((m) => m.refImageIds.includes(id))) return;
+  await db.images.delete(id);
+}
+
 export function RefPills() {
   const imageIds = useRefStore((s) => s.imageIds);
   const remove   = useRefStore((s) => s.remove);
@@ -13,6 +28,16 @@ export function RefPills() {
     [],
   );
 
+  async function onRemoveOne(id: string) {
+    remove(id);
+    await pruneOrphanUpload(id);
+  }
+  async function onClearAll() {
+    const ids = [...imageIds];
+    clear();
+    for (const id of ids) await pruneOrphanUpload(id);
+  }
+
   if (imageIds.length === 0) return null;
 
   return (
@@ -23,7 +48,7 @@ export function RefPills() {
           return (
             <div key={id} className="inline-flex items-center gap-1.5 bg-bg-2 border border-border rounded px-2 py-1 text-[11px] text-muted">
               {id.slice(0, 8)} <span className="opacity-60">[已清理]</span>
-              <span onClick={() => remove(id)} className="cursor-pointer text-muted ml-0.5">✕</span>
+              <span onClick={() => void onRemoveOne(id)} className="cursor-pointer text-muted ml-0.5">✕</span>
             </div>
           );
         }
@@ -35,7 +60,7 @@ export function RefPills() {
             <img src={img.dataUrl} className="w-[22px] h-[22px] object-cover rounded-sm" />
             <span className="text-[11px] text-accent font-semibold tracking-tight">{img.shortId}</span>
             <span
-              onClick={() => remove(id)}
+              onClick={() => void onRemoveOne(id)}
               className="cursor-pointer text-accent opacity-60 text-[13px] leading-none px-0.5 hover:opacity-100"
             >
               ✕
@@ -44,7 +69,7 @@ export function RefPills() {
         );
       })}
       <span
-        onClick={clear}
+        onClick={() => void onClearAll()}
         className="cursor-pointer text-muted text-[11px] self-center underline ml-1"
       >
         清空全部
