@@ -1,6 +1,7 @@
 import { useUIStore, type TabId } from '../../../../stores/uiStore';
 import { modelById } from '../../../../data/models';
 import { BigImageTab } from './BigImageTab';
+import { TreeTab } from './TreeTab';
 
 const ALL_TABS: { id: TabId; label: string; modelGated?: boolean }[] = [
   { id: 'big',     label: '大图' },
@@ -36,7 +37,7 @@ export function Workspace() {
       </div>
       <div className="flex-1 overflow-auto p-6">
         {activeTab === 'big'     && <BigImageTab />}
-        {activeTab === 'tree'    && <Placeholder name="分支树" />}
+        {activeTab === 'tree'    && <TreeTab />}
         {activeTab === 'library' && <Placeholder name="图库" />}
         {activeTab === 'mask'    && <Placeholder name="区域编辑" />}
       </div>
