@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===========================================
+   宋韵 · 朱砂 × 宣纸 — global tokens & paper
+   =========================================== */
+:root {
+  --shadow-paper: 0 1px 0 rgba(80,50,20,0.04), 0 8px 24px rgba(80,50,20,0.06);
+  --shadow-modal: 0 4px 12px rgba(80,50,20,0.10), 0 24px 64px rgba(80,50,20,0.14);
+  --shadow-img:   0 1px 2px rgba(80,50,20,0.06), 0 4px 12px rgba(80,50,20,0.08);
+}
+
+html, body, #root {
+  margin: 0; padding: 0;
+  height: 100%;
+  background: #faf6ee;
+  color: #1a1814;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB",
+               "Microsoft YaHei", "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "palt" 1;
+}
+
+/* 宣纸纹理 — 全屏覆盖在内容下方 */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(at 0% 0%,    rgba(168,40,40,0.025) 0%, transparent 45%),
+    radial-gradient(at 100% 100%, rgba(80,50,20,0.025) 0%, transparent 55%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.42  0 0 0 0 0.34  0 0 0 0 0.18  0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size: auto, auto, 180px 180px;
+}
+#root { position: relative; z-index: 1; }
+
+/* Scrollbar — warm thin */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cfc4a5; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #a82828; }
+
+/* ===========================================
+   Reusable component classes (used via @apply
+   pattern OR straight in JSX className)
+   =========================================== */
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-1.5
+           bg-accent hover:bg-accent-deep active:translate-y-px
+           text-white font-medium tracking-wide
+           border-0 rounded
+           px-5 py-2 cursor-pointer
+           transition-colors duration-150
+           disabled:bg-faint disabled:cursor-not-allowed;
+    box-shadow: 0 1px 2px rgba(120,20,20,0.18);
+  }
+  .btn-primary:disabled { box-shadow: none; }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-1.5
+           bg-paper text-ink-soft
+           border border-border hover:border-accent hover:text-accent
+           font-sans rounded
+           px-3.5 py-2 cursor-pointer
+           transition-colors duration-150;
+  }
+
+  .btn-upload {
+    @apply inline-flex items-center gap-1.5
+           bg-accent/[0.06] text-accent hover:bg-accent/[0.14]
+           border-[1.5px] border-dashed border-accent/30 hover:border-accent hover:border-solid
+           font-medium text-[12.5px] tracking-wide
+           rounded px-3.5 py-1.5 cursor-pointer
+           transition-all duration-150;
+  }
+
+  .field-input, .field-select, .field-textarea {
+    @apply bg-paper border border-border text-ink
+           font-sans text-[13px]
+           rounded px-3 py-2
+           transition-colors duration-150
+           focus:outline-none focus:border-accent;
+  }
+  .field-input:focus, .field-select:focus, .field-textarea:focus {
+    box-shadow: 0 0 0 3px rgba(168,40,40,0.06);
+  }
+}
