@@ -3,6 +3,7 @@ import { modelById } from '../../../../data/models';
 import { BigImageTab } from './BigImageTab';
 import { TreeTab } from './TreeTab';
 import { LibraryTab } from './LibraryTab';
+import { MaskTab } from './MaskTab';
 
 const ALL_TABS: { id: TabId; label: string; modelGated?: boolean }[] = [
   { id: 'big',     label: '大图' },
@@ -40,17 +41,8 @@ export function Workspace() {
         {activeTab === 'big'     && <BigImageTab />}
         {activeTab === 'tree'    && <TreeTab />}
         {activeTab === 'library' && <LibraryTab />}
-        {activeTab === 'mask'    && <Placeholder name="区域编辑" />}
+        {activeTab === 'mask'    && <MaskTab />}
       </div>
     </section>
-  );
-}
-
-function Placeholder({ name }: { name: string }) {
-  return (
-    <div className="text-muted text-center py-20 text-[13px]">
-      <div className="font-display text-[22px] text-faint mb-3">{name}</div>
-      该功能即将上线（已在路线图）
-    </div>
   );
 }

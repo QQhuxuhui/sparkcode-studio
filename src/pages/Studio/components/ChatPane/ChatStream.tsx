@@ -5,6 +5,7 @@ import { fmtTime, toast } from '../../../../lib/utils';
 import { isGeminiImageModel, modelById } from '../../../../data/models';
 import { useRefStore } from '../../../../stores/refStore';
 import { useUIStore } from '../../../../stores/uiStore';
+import { useMaskStore } from '../../../../stores/maskStore';
 
 export function ChatStream() {
   const messages = useLiveQuery(() => db.messages.orderBy('createdAt').toArray(), [], []);
@@ -36,8 +37,7 @@ export function ChatStream() {
       toast('当前模型不支持区域编辑，请切到 gpt-image-2');
       return;
     }
-    // F4 will wire maskStore here. For now just stash + switch tab.
-    useUIStore.setState({ activeImageId: id });
+    useMaskStore.getState().setSource(id);
     setTab('mask');
   }
 
