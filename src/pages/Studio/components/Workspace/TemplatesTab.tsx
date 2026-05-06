@@ -13,7 +13,9 @@ import type { StyleTemplate, TemplateCategory } from '../../../../types';
 export function TemplatesTab() {
   const [templates,  setTemplates]  = useState<StyleTemplate[]>([]);
   const [categories, setCategories] = useState<TemplateCategory[]>([]);
-  const [activeCategory, setActiveCategory] = useState<string>('all');
+  // Empty string = not yet picked. We default to the first real category once
+  // categories load, so first paint isn't 387 simultaneous <img> requests.
+  const [activeCategory, setActiveCategory] = useState<string>('');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
@@ -24,6 +26,7 @@ export function TemplatesTab() {
       .then(([items, cats]) => {
         setTemplates(items);
         setCategories(cats);
+        setActiveCategory(cats[0]?.name ?? 'all');
         setLoading(false);
       })
       .catch((e: unknown) => {
@@ -141,7 +144,12 @@ function TemplateCard({ template, onApply }: { template: StyleTemplate; onApply:
     >
       <div className="aspect-square bg-bg-2 flex items-center justify-center overflow-hidden relative">
         {template.thumbnailUrl ? (
-          <img src={template.thumbnailUrl} className="w-full h-full object-cover" />
+          <img
+            src={template.thumbnailUrl}
+            className="w-full h-full object-cover"
+            loading="lazy"
+            decoding="async"
+          />
         ) : (
           <div className="font-display text-faint text-[14px] text-center px-3">
             {template.name}
