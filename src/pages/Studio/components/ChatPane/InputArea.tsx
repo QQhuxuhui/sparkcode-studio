@@ -12,10 +12,11 @@ import { PolishModal } from '../Modals/PolishModal';
 import type { GeneratedImage, StyleTemplate } from '../../../../types';
 
 export function InputArea() {
-  const selectedModel = useUIStore((s) => s.selectedModel);
-  const refIds        = useRefStore((s) => s.imageIds);
-  const addRef        = useRefStore((s) => s.add);
-  const clearRefs     = useRefStore((s) => s.clear);
+  const selectedModel  = useUIStore((s) => s.selectedModel);
+  const setPromptDraft = useUIStore((s) => s.setPromptDraft);
+  const refIds         = useRefStore((s) => s.imageIds);
+  const addRef         = useRefStore((s) => s.add);
+  const clearRefs      = useRefStore((s) => s.clear);
 
   const [prompt, setPrompt]   = useState('');
   const [count,  setCount]    = useState(1);
@@ -36,17 +37,27 @@ export function InputArea() {
     void listTemplates().then((all) => setPresets(all.slice(0, 12))).catch(() => { /* silent */ });
   }, []);
 
-  // Apply-template events fired from TemplatesTab → append to current prompt.
+  // Apply-template events fired from TemplatesTab. Two modes:
+  //   append  — concat to current prompt (mechanical "X · Y")
+  //   replace — overwrite the textarea with the AI-merged final prompt
   useEffect(() => {
     function onApply(e: Event) {
-      const t = (e as CustomEvent<StyleTemplate>).detail;
-      const suffix = t.promptSuffix ?? t.promptTemplate ?? '';
-      if (!suffix) return;
-      setPrompt((cur) => (cur.trim() ? `${cur.trim()} · ${suffix}` : suffix));
+      const detail = (e as CustomEvent<{ text: string; mode: 'append' | 'replace' }>).detail;
+      const text = detail?.text?.trim();
+      if (!text) return;
+      if (detail.mode === 'replace') {
+        setPrompt(text);
+      } else {
+        setPrompt((cur) => (cur.trim() ? `${cur.trim()} · ${text}` : text));
+      }
     }
     window.addEventListener('sparkcode:apply-template', onApply as EventListener);
     return () => window.removeEventListener('sparkcode:apply-template', onApply as EventListener);
   }, []);
+
+  // Mirror prompt → uiStore.promptDraft so TemplatesTab's modal can read the
+  // user's current input when AI-merging without coupling components.
+  useEffect(() => { setPromptDraft(prompt); }, [prompt, setPromptDraft]);
 
   async function onPolish() {
     const original = prompt.trim();

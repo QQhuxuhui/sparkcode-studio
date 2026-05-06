@@ -7,11 +7,13 @@ type UIStore = {
   activeImageId: string | null;
   selectedNodeIds: string[];
   selectedModel: string;          // mirrored to localStorage on change
+  promptDraft: string;            // mirror of InputArea textarea — read by TemplatesTab modal
 
   setTab:           (t: TabId) => void;
   setActiveImage:   (id: string | null) => void;
   setSelectedNodes: (ids: string[]) => void;
   setModel:         (id: string) => void;
+  setPromptDraft:   (text: string) => void;
 };
 
 const SETTINGS_MODEL_KEY = 'conv_image_settings_model';
@@ -30,6 +32,7 @@ export const useUIStore = create<UIStore>((set) => ({
   activeImageId: null,
   selectedNodeIds: [],
   selectedModel: initialModel,
+  promptDraft: '',
 
   setTab:           (activeTab)       => set({ activeTab }),
   setActiveImage:   (activeImageId)   => set({ activeImageId }),
@@ -38,4 +41,5 @@ export const useUIStore = create<UIStore>((set) => ({
     try { localStorage.setItem(SETTINGS_MODEL_KEY, selectedModel); } catch { /* ignore */ }
     set({ selectedModel });
   },
+  setPromptDraft:   (promptDraft)     => set({ promptDraft }),
 }));
