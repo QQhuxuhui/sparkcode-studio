@@ -67,8 +67,30 @@ function slugify(s: string): string {
   return s.toLowerCase().replace(/[^\w一-鿿]+/g, '-').replace(/^-|-$/g, '');
 }
 
+async function fetchWithRetry(url: string, attempts: number, timeoutMs: number): Promise<Response> {
+  let lastErr: unknown;
+  for (let i = 1; i <= attempts; i++) {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(new Error(`timeout ${timeoutMs}ms`)), timeoutMs);
+    try {
+      const res = await fetch(url, { signal: ctrl.signal });
+      clearTimeout(t);
+      return res;
+    } catch (e) {
+      clearTimeout(t);
+      lastErr = e;
+      if (i < attempts) {
+        const backoff = 1000 * 2 ** (i - 1);
+        console.warn(`  [fetch] retry ${i}/${attempts} for ${url} after ${backoff}ms (${(e as Error).message})`);
+        await new Promise((r) => setTimeout(r, backoff));
+      }
+    }
+  }
+  throw lastErr;
+}
+
 async function fetchText(url: string): Promise<string> {
-  const res = await fetch(url);
+  const res = await fetchWithRetry(url, 4, 60_000);
   if (!res.ok) throw new Error(`fetch ${url}: ${res.status}`);
   // Normalize CRLF → LF so all parsers downstream can use \n only.
   const text = await res.text();
@@ -183,7 +205,7 @@ function parseGalleryDoc(md: string): ParsedTemplate[] {
 }
 
 async function downloadImage(url: string): Promise<{ buf: Buffer; contentType: string }> {
-  const res = await fetch(url);
+  const res = await fetchWithRetry(url, 3, 30_000);
   if (!res.ok) throw new Error(`download ${url}: ${res.status}`);
   const buf = Buffer.from(await res.arrayBuffer());
   const ct = res.headers.get('content-type') || 'image/jpeg';
@@ -234,13 +256,28 @@ async function main() {
     await db.execute(sql`TRUNCATE TABLE templates`);
   }
 
-  let inserted = 0, updated = 0, errors = 0;
+  // OSS host prefix to detect rows whose images are already on OSS — used to
+  // skip redundant re-download/upload on retries.
+  const ossHost = process.env.OSS_BUCKET && process.env.OSS_REGION
+    ? `${process.env.OSS_BUCKET}.${process.env.OSS_REGION}.aliyuncs.com`
+    : null;
+
+  let inserted = 0, updated = 0, errors = 0, skippedAlreadyOnOss = 0;
   for (let i = 0; i < all.length; i++) {
     const t = all[i];
     let thumbnailUrl   = t.exampleImageUrl;
     let fullExampleUrl = t.exampleImageUrl;
 
-    if (withImages && t.exampleImageUrl) {
+    const existing = await db
+      .select({ id: templates.id, fullExampleUrl: templates.fullExampleUrl, thumbnailUrl: templates.thumbnailUrl })
+      .from(templates)
+      .where(eq(templates.name, t.name))
+      .limit(1);
+
+    const existingOnOss =
+      ossHost && existing[0]?.fullExampleUrl?.includes(ossHost) ? existing[0].fullExampleUrl : null;
+
+    if (withImages && t.exampleImageUrl && !existingOnOss) {
       try {
         const { buf, contentType } = await downloadImage(t.exampleImageUrl);
         const ext = (contentType.split('/')[1] || 'jpg').split(';')[0];
@@ -251,14 +288,13 @@ async function main() {
         console.warn(`  [${i+1}/${all.length}] image upload failed for ${t.name}: ${(e as Error).message}`);
         errors++;
       }
+    } else if (existingOnOss) {
+      thumbnailUrl   = existing[0].thumbnailUrl   || existingOnOss;
+      fullExampleUrl = existingOnOss;
+      skippedAlreadyOnOss++;
     }
 
     try {
-      const existing = await db
-        .select({ id: templates.id })
-        .from(templates)
-        .where(eq(templates.name, t.name))
-        .limit(1);
       if (existing.length > 0) {
         await db.update(templates).set({
           category:       t.category,
@@ -293,7 +329,7 @@ async function main() {
     if ((i + 1) % 50 === 0) console.log(`[import] progress ${i+1}/${all.length}`);
   }
 
-  console.log(`[import] done. inserted=${inserted} updated=${updated} errors=${errors}`);
+  console.log(`[import] done. inserted=${inserted} updated=${updated} errors=${errors} skippedAlreadyOnOss=${skippedAlreadyOnOss}`);
   await closeDb();
 }
 

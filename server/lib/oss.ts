@@ -29,7 +29,12 @@ export function getOSSClient(): OSS {
  */
 export async function uploadToOSS(objectPath: string, buf: Buffer, contentType: string): Promise<string> {
   const c = getOSSClient();
-  await c.put(objectPath, buf, { headers: { 'Content-Type': contentType } });
+  await c.put(objectPath, buf, {
+    headers: {
+      'Content-Type':     contentType,
+      'x-oss-object-acl': 'public-read',
+    },
+  });
   if (env.OSS_PUBLIC_PREFIX) {
     return `${env.OSS_PUBLIC_PREFIX.replace(/\/$/, '')}/${objectPath}`;
   }
