@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SparkCode · 风格预览</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;700&family=Cormorant+Garamond:ital,wght@0,500;1,500&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  :root { --ink:#0f0f12; --paper:#fafaf6; --line:#1a1a1f0a; --accent:#a82828; --terra:#a8745c; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; background: var(--paper); color: var(--ink); font-family:'Inter Tight', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 56px 32px 96px; }
+  .hat { display:flex; align-items: flex-start; gap: 32px; flex-wrap: wrap; margin-bottom: 32px; }
+  .hat h1 { font-family:'Cormorant Garamond', serif; font-weight: 500; font-size: clamp(48px, 7vw, 92px); line-height: 0.95; letter-spacing: -0.02em; margin: 0; }
+  .hat h1 em { font-style: italic; color: var(--accent); }
+  .hat p { font-size: 14px; line-height: 1.7; max-width: 520px; color: #4a4338; margin: 14px 0 0; }
+  .meta { font-family:'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #8a8076; margin-bottom: 24px; }
+
+  .section-h {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin: 48px 0 18px; padding-bottom: 14px; border-bottom: 1px solid var(--ink);
+  }
+  .section-h h2 { font-family: 'Cormorant Garamond', serif; font-weight: 500; font-size: 36px; margin: 0; letter-spacing: -0.01em; }
+  .section-h h2 em { color: var(--accent); font-style: italic; }
+  .section-h .badge { font-family:'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); }
+
+  .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 24px; }
+  a.card {
+    text-decoration: none; color: inherit;
+    background: white; border: 1px solid #ebe8e0; border-radius: 6px;
+    overflow: hidden; transition: transform .25s ease, box-shadow .25s ease, border-color .2s;
+    display: flex; flex-direction: column;
+  }
+  a.card:hover { transform: translateY(-4px); border-color: var(--accent); box-shadow: 0 18px 40px rgba(80,50,20,0.10); }
+  .swatch { aspect-ratio: 16 / 9; position: relative; overflow:hidden; }
+  .body { padding: 22px 24px 26px; }
+  .pill { display: inline-block; font-family:'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; padding: 3px 8px; border-radius: 99px; background: var(--ink); color: #fff; margin-bottom: 10px; }
+  .ttl { font-family:'Cormorant Garamond', serif; font-size: 30px; line-height: 1.05; font-weight: 500; margin: 0 0 4px; }
+  .sub { font-size: 13px; color: #4a4338; margin: 4px 0 12px; }
+  .traits { display:flex; gap:6px; flex-wrap:wrap; }
+  .traits span { font-size: 11px; color: #6a6258; border:1px solid #ebe8e0; padding: 3px 9px; border-radius: 99px; }
+
+  /* Light direction swatches */
+  .sw-workbench {
+    background: #f4f0e6;
+    background-image:
+      linear-gradient(rgba(168,40,40,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(30,58,95,0.06) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .sw-workbench::before {
+    content:''; position:absolute; left: 24px; top: 50%; transform: translateY(-50%) rotate(-6deg); width: 70px; height:70px; background:#a82828;
+    box-shadow: 2px 2px 0 #1e3a5f;
+  }
+  .sw-workbench::after {
+    content:'纸上'; position:absolute; left: 110px; top: 50%; transform: translateY(-50%); font-family:'Cormorant Garamond', serif; font-size: 56px; color:#1a1814;
+  }
+
+  .sw-editorial { background: #fafaf7; }
+  .sw-editorial::before { content:'01 / 04'; position:absolute; left: 24px; top: 16px; font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.18em; color:#0a0a0a; }
+  .sw-editorial::after {
+    content:'Atelier'; position:absolute; left: 24px; bottom: 18px;
+    font-family:'Cormorant Garamond', serif; font-style: italic; font-size: 60px; line-height:1; color: #0a0a0a;
+  }
+  .sw-editorial .accent { position:absolute; right: 24px; top: 50%; transform: translateY(-50%); width: 90px; height: 90px; background: #d4a017; border-radius:50%; }
+
+  .sw-soft {
+    background:
+      radial-gradient(ellipse at 0% 0%, rgba(208,149,146,0.18) 0%, transparent 55%),
+      radial-gradient(ellipse at 100% 100%, rgba(126,154,115,0.12) 0%, transparent 55%),
+      #fbf7f0;
+  }
+  .sw-soft::before {
+    content:''; position:absolute; left: 32px; top: 50%; transform: translateY(-50%); width: 70px; height: 70px; border-radius: 22px;
+    background: linear-gradient(135deg, #a8745c, #d09592);
+    box-shadow: 0 12px 28px rgba(168,116,92,0.3);
+  }
+  .sw-soft::after {
+    content:'S'; position:absolute; left: 32px; top: 50%; transform: translateY(-50%); width: 70px; height: 70px; font-family:'Instrument Serif', serif; font-style: italic; font-size: 50px; color: white; display: flex; align-items: center; justify-content: center;
+  }
+  .sw-soft .label { position:absolute; left: 124px; top: 50%; transform: translateY(-50%); font-family:'Instrument Serif', serif; font-style: italic; font-size: 38px; color: #2a2520; }
+
+  /* Archived (early) swatches — muted style */
+  .archived a.card { opacity: 0.85; }
+  .archived a.card:hover { opacity: 1; }
+  .sw-noir { background: #0d0d10; }
+  .sw-noir::before {
+    content:''; position:absolute; inset:0;
+    background-image: linear-gradient(#1a1a22 1px, transparent 1px), linear-gradient(90deg, #1a1a22 1px, transparent 1px);
+    background-size: 32px 32px; opacity: .6;
+  }
+  .sw-noir::after { content:'NOIR'; position:absolute; right:18px; bottom:14px; font-family:'JetBrains Mono', monospace; font-size: 22px; font-weight:700; color:#d4ff3a; letter-spacing:0.1em; text-shadow: 0 0 10px rgba(212,255,58,0.5); }
+  .sw-noir .dot { position: absolute; left: 18px; top: 18px; width: 6px; height:6px; background:#d4ff3a; border-radius:99px; box-shadow: 0 0 12px #d4ff3a; }
+
+  .sw-canvas { background:
+    radial-gradient(ellipse at 30% 40%, #f6c39933 0%, transparent 65%),
+    radial-gradient(ellipse at 70% 70%, #74628a44 0%, transparent 60%),
+    #1c1c1f;
+  }
+  .sw-canvas::before {
+    content:''; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    width: 60%; aspect-ratio: 1; border-radius: 8px;
+    background-image: url('https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-359-水墨双重曝光人物海报/example.jpeg');
+    background-size: cover; background-position: center;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.06);
+  }
+
+  footer { margin-top: 80px; font-family:'JetBrains Mono', monospace; font-size:11px; color:#8a8076; letter-spacing: 0.06em; }
+  footer span { color: var(--accent); }
+
+  .archive-note {
+    background: #f5efe4; border: 1px dashed #ebe8e0; border-radius: 6px;
+    padding: 14px 18px; margin-bottom: 20px;
+    font-size: 13px; color: #4a4338; line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hat">
+    <div>
+      <div class="meta">SparkCode Studio · Style Exploration · v0.1</div>
+      <h1>三个浅色方向 ／<br/>都保留<em>左对话 · 右工作台</em>。</h1>
+    </div>
+    <p>当前 UI 是「宋韵 · 朱砂 × 宣纸」——克制、东方、博物馆气质。下面三个浅色方向都按你现在的 grid 布局（440px 对话面板 + 工作台 tab）落地，方便直接对比。点任一进真实可滚动的页面，能看到 Header / 对话 / 模板库 tab 三件套。</p>
+  </div>
+
+  <div class="section-h">
+    <h2 class="serif">浅色方向 · <em>主推</em></h2>
+    <span class="badge">★ FOCUS</span>
+  </div>
+
+  <div class="grid">
+    <a class="card" href="./light-workbench.html">
+      <div class="swatch sw-workbench"></div>
+      <div class="body">
+        <span class="pill">A · 工作台 · LIGHT</span>
+        <h2 class="ttl">纸上工作台</h2>
+        <p class="sub">现状演化版：保留东方调性，加靛蓝双 accent + 显式版心栏杆 + 印章动画。改动量最小，品牌资产留下。</p>
+        <div class="traits"><span>米黄底</span><span>朱砂 + 青靛</span><span>Noto Serif SC</span><span>Stamp 动画</span></div>
+      </div>
+    </a>
+    <a class="card" href="./light-editorial.html">
+      <div class="swatch sw-editorial"><div class="accent"></div></div>
+      <div class="body">
+        <span class="pill">B · 编辑部 · LIGHT</span>
+        <h2 class="ttl">编辑部</h2>
+        <p class="sub">高对比衬线 + 杂志感版式 + 单 accent 芥末黄。把生图当版面设计，气质优雅、克制有冲击。</p>
+        <div class="traits"><span>纯白底</span><span>芥末黄</span><span>Cormorant + Bricolage</span><span>非对称网格</span></div>
+      </div>
+    </a>
+    <a class="card" href="./light-soft.html">
+      <div class="swatch sw-soft"><div class="label">Soft</div></div>
+      <div class="body">
+        <span class="pill">C · 柔和工作室 · LIGHT</span>
+        <h2 class="ttl">柔和工作室</h2>
+        <p class="sub">奶油底 + 暖陶土 + 鼠尾草绿，全圆角、软阴影，Notion-meets-Linear 气质。最温柔，适合长时间停留。</p>
+        <div class="traits"><span>奶油底</span><span>陶土 + 鼠尾草</span><span>Instrument Serif</span><span>圆角 16px</span></div>
+      </div>
+    </a>
+  </div>
+
+  <div class="section-h" style="margin-top: 64px;">
+    <h2 class="serif">早期探索 · <em>仅供参考</em></h2>
+    <span class="badge" style="color:#8a8076;">○ ARCHIVE</span>
+  </div>
+
+  <div class="archive-note">
+    <strong>这 4 个不符合你的约束</strong>（前两个是深色，后两个是非分屏布局），但它们各自有些值得参考的小巧思——比如 Canvas Immersive 的 hover 时全屏动态主题色——可以挑选移植到主推三个之一。
+  </div>
+
+  <div class="grid archived">
+    <a class="card" href="./atelier-noir.html">
+      <div class="swatch sw-noir"><span class="dot"></span></div>
+      <div class="body">
+        <span class="pill">早期 · 深色</span>
+        <h2 class="ttl">深空匠造</h2>
+        <p class="sub">CAD 网格 + lime 高亮，工程师审美；如果以后做 Pro / Dev 模式可参考。</p>
+        <div class="traits"><span>Dark</span><span>Lime</span><span>Mono</span></div>
+      </div>
+    </a>
+    <a class="card" href="./canvas-immersive.html">
+      <div class="swatch sw-canvas"></div>
+      <div class="body">
+        <span class="pill">早期 · 深色</span>
+        <h2 class="ttl">沉浸画布</h2>
+        <p class="sub">UI 让位给图，hover 切换全屏背景 + accent 跟随当前作品色。<strong>动效值得移植</strong>。</p>
+        <div class="traits"><span>Dark</span><span>Glassmorphism</span><span>Dynamic Color</span></div>
+      </div>
+    </a>
+    <a class="card" href="./atelier-press.html">
+      <div class="swatch sw-editorial" style="filter: saturate(0.7) opacity(0.85);"><div class="accent" style="background:#c8552c;"></div></div>
+      <div class="body">
+        <span class="pill">早期 · 杂志布局</span>
+        <h2 class="ttl">编辑部（杂志版）</h2>
+        <p class="sub">不是分屏布局，而是杂志整版。本质是 B 的极端版，参考类型/版面节奏。</p>
+        <div class="traits"><span>Editorial</span><span>Pull Quote</span><span>Whisky</span></div>
+      </div>
+    </a>
+    <a class="card" href="./paper-workbench.html">
+      <div class="swatch sw-workbench" style="filter: saturate(0.85);"></div>
+      <div class="body">
+        <span class="pill">早期 · 杂志布局</span>
+        <h2 class="ttl">工作台（杂志版）</h2>
+        <p class="sub">A 的早期排版尝试，整版"编辑部桌面"风。结构上不是分屏。</p>
+        <div class="traits"><span>Heritage+</span><span>Indigo</span><span>Press</span></div>
+      </div>
+    </a>
+  </div>
+
+  <footer>
+    OPEN <span>localhost:5173/preview/</span> · ALL 7 DEMOS USE LIVE OSS IMAGES · CHOOSE A DIRECTION TO PROCEED →
+  </footer>
+</div>
+</body>
+</html>

@@ -4,12 +4,11 @@ import { useRefStore } from '../../../../stores/refStore';
 import { isGeminiImageModel } from '../../../../data/models';
 import { putMessage, putNode, putImage, db } from '../../../../services/db';
 import { callGptImageGen, callGptImageEdit, callGeminiChatImage, callPolishPrompt } from '../../../../services/api';
-import { listTemplates } from '../../../../services/templates';
 import { toast, fileToDataUrl } from '../../../../lib/utils';
 import { RefPills } from './RefPills';
 import { MentionPopover } from './MentionPopover';
 import { PolishModal } from '../Modals/PolishModal';
-import type { GeneratedImage, StyleTemplate } from '../../../../types';
+import type { GeneratedImage } from '../../../../types';
 
 export function InputArea() {
   const selectedModel  = useUIStore((s) => s.selectedModel);
@@ -26,16 +25,9 @@ export function InputArea() {
   const [busy, setBusy] = useState(false);
   const [polishBusy,   setPolishBusy]   = useState(false);
   const [polishModal,  setPolishModal]  = useState<{ original: string; polished: string } | null>(null);
-  const [presets, setPresets] = useState<StyleTemplate[]>([]);
 
   const taRef       = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Load top templates as quick presets in the dropdown.
-  // The full template browser lives in the 模板库 workspace tab.
-  useEffect(() => {
-    void listTemplates().then((all) => setPresets(all.slice(0, 12))).catch(() => { /* silent */ });
-  }, []);
 
   // Apply-template events fired from TemplatesTab. Two modes:
   //   append  — concat to current prompt (mechanical "X · Y")
@@ -73,14 +65,6 @@ export function InputArea() {
     } finally {
       setPolishBusy(false);
     }
-  }
-
-  function applyPreset(presetId: string) {
-    if (!presetId) return;
-    const preset = presets.find((t) => t.id === presetId);
-    if (!preset?.promptSuffix) return;
-    const cur = prompt.trim();
-    setPrompt(cur ? `${cur} · ${preset.promptSuffix}` : preset.promptSuffix);
   }
 
   const isGem = isGeminiImageModel(selectedModel);
@@ -184,112 +168,126 @@ export function InputArea() {
     }
   }
 
+  // Tailwind class shorthands kept inline so the JSX scans cleanly. Selects
+  // need explicit widths because the native control sizes to its widest option;
+  // a long Chinese preset name would otherwise expand the box and shove
+  // siblings out of the row.
+  const toolBtn  = 'inline-flex items-center gap-1 h-8 px-2.5 rounded text-[12px] text-ink-soft bg-paper border border-border-soft hover:border-accent hover:text-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap shrink-0';
+  const toolSel  = 'h-8 px-2 rounded text-[12px] text-ink-soft bg-paper border border-border-soft hover:border-accent focus:outline-none focus:border-accent transition-colors';
+  const numInput = 'h-7 w-12 px-1.5 rounded text-[12px] text-ink bg-paper border border-border-soft text-center focus:outline-none focus:border-accent';
+  const fieldLbl = 'text-[11px] text-muted inline-flex items-center gap-1.5 shrink-0';
+
   return (
-    <div className="border-t border-border px-5 py-4 bg-paper">
+    <div className="border-t border-border px-5 py-4 bg-paper-warm flex flex-col gap-2">
       <RefPills />
-      <div className="relative">
-        <textarea
-          ref={taRef}
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          rows={3}
-          placeholder="描述你想要的图像，Cmd/Ctrl+Enter 发送；@ 提及历史图"
-          className="field-textarea w-full resize-y leading-relaxed"
-          onKeyDown={(e) => {
-            if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-              e.preventDefault(); void onSend();
-            }
-          }}
-          onDragOver={(e) => {
-            if (Array.from(e.dataTransfer.types).includes('text/conv-image-ref')) e.preventDefault();
-          }}
-          onDrop={(e) => {
-            const id = e.dataTransfer.getData('text/conv-image-ref');
-            if (id) {
-              e.preventDefault(); e.stopPropagation();
-              addRef(id);
-            }
-          }}
-          disabled={busy}
-        />
-        <MentionPopover textareaRef={taRef} onPick={(img) => addRef(img.id)} />
-      </div>
-      <div className="flex gap-2 items-center mt-2.5 flex-wrap">
-        <button
-          onClick={() => void onPolish()}
-          disabled={polishBusy}
-          title="提示词润色（用 gpt-5.5 重写一遍 prompt）"
-          className="btn-ghost py-1.5 px-3"
-        >
-          {polishBusy ? '✨ 润色中…' : '✨ 润色'}
-        </button>
-        <select
-          onChange={(e) => { applyPreset(e.target.value); e.target.value = ''; }}
-          defaultValue=""
-          className="field-select px-2.5 py-1.5 text-[12.5px]"
-          title="快捷预设（完整模板库见右侧「模板库」tab）"
-        >
-          <option value="">🎨 风格预设</option>
-          {presets.map((t) => (
-            <option key={t.id} value={t.id}>{t.name}</option>
-          ))}
-        </select>
-        <label className="text-[12px] text-muted inline-flex items-center gap-1">
-          数量
-          <input
-            type="number"
-            min={1} max={4}
-            value={count}
-            onChange={(e) => setCount(Math.max(1, Math.min(4, parseInt(e.target.value, 10) || 1)))}
-            className="field-input w-14 px-2 py-1 text-[12.5px]"
+      <div className="bg-paper rounded-xl border border-border-soft shadow-sm focus-within:border-accent focus-within:shadow-md transition-all duration-200">
+        {/* Textarea */}
+        <div className="relative">
+          <textarea
+            ref={taRef}
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            rows={3}
+            placeholder="描述你想要的图像，Cmd/Ctrl+Enter 发送；@ 提及历史图"
+            className="w-full resize-y outline-none text-[13px] bg-transparent placeholder-muted leading-relaxed px-4 py-3 min-h-[80px]"
+            onKeyDown={(e) => {
+              if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+                e.preventDefault(); void onSend();
+              }
+            }}
+            onDragOver={(e) => {
+              if (Array.from(e.dataTransfer.types).includes('text/conv-image-ref')) e.preventDefault();
+            }}
+            onDrop={(e) => {
+              const id = e.dataTransfer.getData('text/conv-image-ref');
+              if (id) {
+                e.preventDefault(); e.stopPropagation();
+                addRef(id);
+              }
+            }}
+            disabled={busy}
           />
-        </label>
-        {isGem ? (
-          <>
-            <label className="text-[12px] text-muted inline-flex items-center gap-1">
-              比例
-              <select value={aspect} onChange={(e) => setAspect(e.target.value)} className="field-select px-2 py-1 text-[12.5px]">
-                <option>1:1</option><option>16:9</option><option>9:16</option><option>4:3</option><option>3:4</option>
+          <MentionPopover textareaRef={taRef} onPick={(img) => addRef(img.id)} />
+        </div>
+
+        {/* Row A — helpers (operate on the prompt / refs) */}
+        <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-t border-border-soft/50">
+          <button
+            onClick={() => void onPolish()}
+            disabled={polishBusy || !prompt.trim()}
+            title={prompt.trim() ? 'AI智能润色' : '请先在下方输入框写点内容再润色'}
+            className={toolBtn}
+          >
+            {polishBusy ? '✨ 润色中…' : '✨ AI一键润色'}
+          </button>
+
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            title="上传参考图（也可以拖拽到页面任意位置）"
+            className={toolBtn}
+          >
+            📎 上传参考图
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={async (e) => {
+              for (const file of Array.from(e.target.files ?? [])) await ingestFile(file);
+              e.target.value = '';
+            }}
+          />
+        </div>
+
+        {/* Row B — gen params (left) + send (right) */}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2 border-t border-border-soft/50 bg-bg/30 rounded-b-xl">
+          {isGem ? (
+            <>
+              <label className={fieldLbl}>
+                比例
+                <select value={aspect} onChange={(e) => setAspect(e.target.value)} className={`${toolSel} w-[80px]`}>
+                  <option>1:1</option><option>16:9</option><option>9:16</option><option>4:3</option><option>3:4</option>
+                </select>
+              </label>
+              <label className={fieldLbl}>
+                分辨率
+                <select value={resolution} onChange={(e) => setResolution(e.target.value)} className={`${toolSel} w-[70px]`}>
+                  <option>1K</option><option>2K</option><option>4K</option>
+                </select>
+              </label>
+            </>
+          ) : (
+            <label className={fieldLbl}>
+              尺寸
+              <select value={size} onChange={(e) => setSize(e.target.value)} className={`${toolSel} w-[120px]`}>
+                <option>1024x1024</option><option>1536x1024</option><option>1024x1536</option>
               </select>
             </label>
-            <label className="text-[12px] text-muted inline-flex items-center gap-1">
-              分辨率
-              <select value={resolution} onChange={(e) => setResolution(e.target.value)} className="field-select px-2 py-1 text-[12.5px]">
-                <option>1K</option><option>2K</option><option>4K</option>
-              </select>
-            </label>
-          </>
-        ) : (
-          <label className="text-[12px] text-muted inline-flex items-center gap-1">
-            尺寸
-            <select value={size} onChange={(e) => setSize(e.target.value)} className="field-select px-2 py-1 text-[12.5px]">
-              <option>1024x1024</option><option>1536x1024</option><option>1024x1536</option>
-            </select>
+          )}
+
+          <label className={fieldLbl}>
+            数量
+            <input
+              type="number"
+              min={1} max={4}
+              value={count}
+              onChange={(e) => setCount(Math.max(1, Math.min(4, parseInt(e.target.value, 10) || 1)))}
+              className={numInput}
+            />
           </label>
-        )}
-        <span className="ml-auto" />
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          title="上传参考图（也可以拖拽到页面）"
-          className="btn-upload"
-        >
-          <span className="text-[14px]">📎</span>
-          <span>上传图片</span>
-        </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          multiple
-          className="hidden"
-          onChange={async (e) => {
-            for (const file of Array.from(e.target.files ?? [])) await ingestFile(file);
-            e.target.value = '';
-          }}
-        />
-        <button onClick={() => void onSend()} disabled={busy} className="btn-primary px-6">
-          {busy ? '生成中…' : '发送'}
-        </button>
+
+          <span className="ml-auto" />
+
+          <button
+            onClick={() => void onSend()}
+            disabled={busy}
+            className="btn-primary h-8 px-5 text-[13px] shrink-0"
+          >
+            {busy ? '生成中…' : '发送 ↗'}
+          </button>
+        </div>
       </div>
 
       {polishModal && (

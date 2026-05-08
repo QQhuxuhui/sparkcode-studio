@@ -115,8 +115,8 @@ export function Studio() {
         onExport={() => void onExport()}
         onImport={onImportClick}
       />
-      <main className="grid grid-cols-[440px_1fr] min-h-0">
-        <section className="flex flex-col border-r border-border min-h-0 bg-paper-warm">
+      <main className="grid grid-cols-[440px_1fr] min-h-0 bg-bg">
+        <section className="flex flex-col border-r border-border/80 shadow-[1px_0_12px_rgba(0,0,0,0.03)] z-10 min-h-0 bg-paper-warm/80 backdrop-blur-sm relative">
           <ChatStream />
           <ComposerToolbar onNewChat={onNewChat} />
           <InputArea />

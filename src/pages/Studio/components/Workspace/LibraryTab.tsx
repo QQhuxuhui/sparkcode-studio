@@ -107,39 +107,43 @@ export function LibraryTab() {
         </span>
       </div>
 
-      <div className="grid gap-2.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(124px, 1fr))' }}>
+      <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
         {filtered.map((img) => (
           <div
             key={img.id}
             draggable
             onDragStart={(e) => e.dataTransfer.setData('text/conv-image-ref', img.id)}
             onClick={() => onZoom(img.id)}
-            className="relative aspect-square bg-paper border border-border rounded-[3px] overflow-hidden group cursor-pointer hover:border-accent transition-colors"
+            className="relative aspect-square bg-paper border border-border-soft rounded-lg overflow-hidden group cursor-pointer hover:border-accent hover:shadow-md transition-all duration-200"
             style={{ boxShadow: 'var(--shadow-img)' }}
           >
             <img
               src={img.dataUrl}
               draggable={false}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
             <span
-              className="absolute bottom-1 left-1 text-white text-[10px] px-1.5 py-px rounded-sm font-medium tracking-wide pointer-events-none"
-              style={{ background: 'rgba(20,15,10,0.72)' }}
+              className="absolute bottom-1.5 left-1.5 text-white/90 text-[10px] px-1.5 py-0.5 rounded-[3px] font-mono tracking-wide pointer-events-none drop-shadow"
             >
               {img.shortId}
             </span>
             <div
-              className="absolute inset-0 hidden group-hover:flex items-center justify-center gap-1 backdrop-blur-[1px]"
-              style={{ background: 'rgba(28,20,12,0.55)' }}
+              className="absolute inset-0 hidden group-hover:flex flex-col items-center justify-center gap-2 backdrop-blur-[2px]"
+              style={{ background: 'rgba(20,12,8,0.4)' }}
             >
-              <button onClick={(e) => { e.stopPropagation(); addRef(img.id); toast(`引用了 ${img.shortId}`); }}
-                title="引用" className="bg-accent text-white border-0 px-2 py-1 rounded-sm cursor-pointer text-[11px]">↩</button>
-              <button onClick={(e) => { e.stopPropagation(); void onDownload(img.id); }}
-                title="下载" className="text-white border-0 px-2 py-1 rounded-sm cursor-pointer text-[11px]" style={{ background: 'rgba(255,255,255,0.2)' }}>⬇</button>
-              <button onClick={(e) => { e.stopPropagation(); void onShowInTree(img.id); }}
-                title="在树中查看" className="text-white border-0 px-2 py-1 rounded-sm cursor-pointer text-[11px]" style={{ background: 'rgba(255,255,255,0.2)' }}>🌳</button>
-              <button onClick={(e) => { e.stopPropagation(); void onDelete(img.id); }}
-                title="删除" className="text-white border-0 px-2 py-1 rounded-sm cursor-pointer text-[11px]" style={{ background: 'rgba(168,40,40,0.85)' }}>🗑</button>
+              <div className="flex gap-1.5">
+                <button onClick={(e) => { e.stopPropagation(); addRef(img.id); toast(`引用了 ${img.shortId}`); }}
+                  title="引用" className="bg-accent hover:bg-accent-deep text-white border-0 w-7 h-7 flex items-center justify-center rounded-md cursor-pointer text-[12px] transition-colors shadow-sm">↩</button>
+                <button onClick={(e) => { e.stopPropagation(); void onShowInTree(img.id); }}
+                  title="在树中查看" className="bg-white/20 hover:bg-white/30 text-white border-0 w-7 h-7 flex items-center justify-center rounded-md cursor-pointer text-[12px] transition-colors shadow-sm">🌳</button>
+              </div>
+              <div className="flex gap-1.5">
+                <button onClick={(e) => { e.stopPropagation(); void onDownload(img.id); }}
+                  title="下载" className="bg-white/20 hover:bg-white/30 text-white border-0 w-7 h-7 flex items-center justify-center rounded-md cursor-pointer text-[12px] transition-colors shadow-sm">⬇</button>
+                <button onClick={(e) => { e.stopPropagation(); void onDelete(img.id); }}
+                  title="删除" className="bg-error/80 hover:bg-error text-white border-0 w-7 h-7 flex items-center justify-center rounded-md cursor-pointer text-[12px] transition-colors shadow-sm">🗑</button>
+              </div>
             </div>
           </div>
         ))}

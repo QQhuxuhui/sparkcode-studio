@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Soft Studio · SparkCode</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital,wght@0,400;1,400&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg:#fbf7f0;
+    --bg-2:#f5efe4;
+    --paper:#ffffff;
+    --paper-warm:#fefcf7;
+    --line:#e8e2d4;
+    --line-2:#dbd3c0;
+    --line-faint:#f0ead9;
+    --ink:#2a2520;
+    --ink-soft:#5a5048;
+    --muted:#8a8378;
+    --faint:#b5ad9e;
+    --terra:#a8745c;       /* warm primary */
+    --terra-deep:#7e5640;
+    --terra-soft:#a8745c14;
+    --sage:#7e9a73;        /* secondary */
+    --sage-deep:#5a7754;
+    --rose:#d09592;        /* tertiary */
+    --rose-soft:#d0959218;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; height:100%; background: var(--bg); color: var(--ink);
+    font-family: 'Inter Tight', -apple-system, sans-serif; -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--terra); }
+  .serif { font-family: 'Instrument Serif', serif; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  body::before {
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(ellipse 50% 40% at 8% 10%, var(--rose-soft), transparent 70%),
+      radial-gradient(ellipse 60% 50% at 95% 90%, rgba(126,154,115,0.08), transparent 75%);
+  }
+
+  .app { position: relative; z-index: 1; height: 100vh; display: grid; grid-template-rows: 64px 1fr; }
+
+  /* Header — soft, rounded, friendly */
+  header.bar {
+    display: grid; grid-template-columns: auto 1fr auto; align-items: center;
+    padding: 0 24px; gap: 24px;
+    background: var(--paper-warm); border-bottom: 1px solid var(--line);
+  }
+  .brand { display:flex; align-items:center; gap: 12px; }
+  .seal {
+    width: 36px; height: 36px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--terra), var(--rose));
+    color: var(--paper); font-family: 'Instrument Serif', serif; font-style: italic; font-size: 22px; font-weight: 400;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow: 0 4px 12px rgba(168,116,92,0.25), 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .brand-name { display:flex; flex-direction: column; line-height: 1.2; }
+  .brand-name .ttl { font-family: 'Instrument Serif', serif; font-size: 22px; font-weight: 400; letter-spacing: -0.01em; }
+  .brand-name .ttl em { font-style: italic; color: var(--terra); }
+  .brand-name .sub { font-size: 11px; color: var(--muted); letter-spacing: 0.04em; }
+
+  .meta-line {
+    display: flex; gap: 18px; align-items: center; font-size: 12px; color: var(--muted);
+    background: var(--bg-2); padding: 6px 14px; border-radius: 99px; border: 1px solid var(--line); width: fit-content; margin: 0 auto;
+  }
+  .meta-line b { color: var(--ink); font-weight: 500; }
+  .meta-line .live { color: var(--sage); }
+  .meta-line .live::before { content:'●'; margin-right: 4px; animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  .actions { display:flex; gap: 8px; }
+  .btn {
+    background: var(--paper); border: 1px solid var(--line); color: var(--ink-soft);
+    padding: 8px 14px; cursor: pointer; font-size: 12.5px; transition: all .15s; border-radius: 99px;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn:hover { border-color: var(--terra); color: var(--terra); }
+  .btn.primary {
+    background: linear-gradient(135deg, var(--terra), var(--terra-deep));
+    color: var(--paper); border: 0; font-weight: 500;
+    box-shadow: 0 4px 12px rgba(168,116,92,0.3), inset 0 1px 0 rgba(255,255,255,0.15);
+  }
+  .btn.primary:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(168,116,92,0.35); }
+
+  /* Split */
+  main.split { display: grid; grid-template-columns: 440px 1fr; min-height: 0; }
+
+  /* === CHAT PANEL === */
+  section.chat {
+    display: flex; flex-direction: column; min-height: 0;
+    background: var(--paper-warm);
+    border-right: 1px solid var(--line);
+  }
+  .chat-head {
+    padding: 16px 24px; border-bottom: 1px solid var(--line);
+    display:flex; justify-content: space-between; align-items: center;
+  }
+  .chat-head .ttl { display: flex; align-items: center; gap: 10px; }
+  .chat-head .ttl .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--sage); box-shadow: 0 0 0 4px var(--sage)18; }
+  .chat-head .ttl .name { font-family: 'Instrument Serif', serif; font-style: italic; font-size: 22px; font-weight: 400; }
+  .chat-head .meta { font-size: 11px; color: var(--muted); }
+
+  .stream { flex: 1; overflow: auto; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+  .msg { display: flex; gap: 12px; }
+  .msg.u { justify-content: flex-end; }
+  .msg .av {
+    width: 32px; height: 32px; border-radius: 12px; flex-shrink: 0;
+    display:flex; align-items:center; justify-content:center;
+    font-size: 13px; font-weight: 600;
+  }
+  .msg.u .av { background: var(--terra); color: var(--paper); order: 2; }
+  .msg.b .av { background: var(--bg-2); color: var(--ink-soft); border: 1px solid var(--line); }
+  .msg .bubble {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 12px 16px;
+    font-size: 14px; line-height: 1.55; color: var(--ink); max-width: 320px;
+    box-shadow: 0 1px 2px rgba(42,37,32,0.04);
+  }
+  .msg.u .bubble { background: var(--terra); color: var(--paper); border-color: var(--terra); }
+  .msg.b .imgs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; max-width: 280px; }
+  .msg.b .imgs img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); }
+
+  .toolbar {
+    border-top: 1px solid var(--line); padding: 10px 18px;
+    display: flex; align-items: center; gap: 10px;
+    background: var(--bg);
+  }
+  .pill {
+    background: var(--paper); border: 1px solid var(--line); padding: 5px 11px; border-radius: 99px;
+    font-size: 11.5px; color: var(--ink-soft); cursor: pointer;
+  }
+  .pill.active { background: var(--terra); border-color: var(--terra); color: var(--paper); font-weight: 500; }
+  .toolbar .spacer { flex: 1; }
+  .toolbar .ico-btn { background: transparent; border: 0; color: var(--muted); cursor: pointer; padding: 5px 8px; font-size: 12px; border-radius: 8px; }
+  .toolbar .ico-btn:hover { background: var(--bg-2); color: var(--terra); }
+
+  .composer {
+    border-top: 1px solid var(--line); padding: 16px 20px;
+    background: var(--paper-warm);
+  }
+  .composer-box {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 16px;
+    padding: 14px 16px; transition: border-color .15s, box-shadow .15s;
+  }
+  .composer-box:focus-within {
+    border-color: var(--terra); box-shadow: 0 0 0 4px var(--terra-soft);
+  }
+  .composer-box textarea {
+    width: 100%; background: transparent; border: 0; resize: vertical; min-height: 60px;
+    font-family: 'Inter Tight', sans-serif; font-size: 14.5px; line-height: 1.5; color: var(--ink); outline: none;
+  }
+  .composer-box textarea::placeholder { color: var(--faint); }
+  .composer-bottom { display:flex; align-items:center; gap: 10px; margin-top: 10px; }
+  .composer-bottom .hint { font-size: 11px; color: var(--muted); }
+  .composer-bottom .right { margin-left: auto; }
+
+  /* === WORKSPACE === */
+  section.ws { display: flex; flex-direction: column; min-height: 0; background: var(--bg); }
+  .tabs {
+    display:flex; gap: 4px; padding: 12px 24px 0;
+    background: var(--bg);
+  }
+  .tab {
+    padding: 10px 18px; cursor: pointer;
+    font-size: 13.5px; color: var(--muted); transition: all .15s;
+    border-radius: 12px 12px 0 0;
+  }
+  .tab:hover { color: var(--ink); }
+  .tab.active { color: var(--terra); background: var(--paper); border: 1px solid var(--line); border-bottom-color: var(--paper); position: relative; z-index: 1; margin-bottom: -1px; font-weight: 500; }
+
+  .ws-body { flex: 1; overflow: auto; padding: 28px 24px 32px; min-height: 0; background: var(--paper); border-top: 1px solid var(--line); }
+
+  /* AI recommend — soft hero */
+  .rec {
+    background:
+      radial-gradient(ellipse at 0% 0%, var(--rose-soft) 0%, transparent 60%),
+      radial-gradient(ellipse at 100% 100%, rgba(126,154,115,0.08) 0%, transparent 60%),
+      var(--paper-warm);
+    border: 1px solid var(--line); border-radius: 20px; padding: 22px 24px;
+    margin-bottom: 28px;
+  }
+  .rec .h { display:flex; align-items: center; gap: 10px; font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+  .rec .h .star { font-family: 'Instrument Serif', serif; font-style: italic; font-size: 20px; color: var(--terra); }
+  .rec .h .label { font-family: 'Instrument Serif', serif; font-style: italic; font-size: 16px; color: var(--ink); }
+  .rec .row { display: flex; gap: 12px; align-items: center; }
+  .rec input {
+    flex: 1; background: var(--paper); border: 1px solid var(--line); border-radius: 12px;
+    padding: 12px 16px; outline: none;
+    font-family: 'Inter Tight', sans-serif; font-size: 14.5px; color: var(--ink);
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .rec input:focus { border-color: var(--terra); box-shadow: 0 0 0 4px var(--terra-soft); }
+  .rec input::placeholder { color: var(--faint); }
+  .rec button {
+    background: linear-gradient(135deg, var(--terra), var(--terra-deep));
+    color: var(--paper); border: 0; padding: 12px 22px; border-radius: 12px;
+    font-family: 'Inter Tight'; font-size: 13px; font-weight: 500; cursor: pointer;
+    box-shadow: 0 4px 12px rgba(168,116,92,0.25); transition: all .15s; white-space: nowrap;
+  }
+  .rec button:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(168,116,92,0.3); }
+
+  /* Filter chips */
+  .filters { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+  .fchip {
+    padding: 7px 14px; border-radius: 99px; cursor: pointer; font-size: 13px; color: var(--ink-soft);
+    background: var(--bg-2); border: 1px solid var(--line); transition: all .15s;
+    display: inline-flex; gap: 8px; align-items: center;
+  }
+  .fchip:hover { background: var(--paper); border-color: var(--terra); color: var(--terra); }
+  .fchip.active { background: var(--ink); color: var(--paper); border-color: var(--ink); font-weight: 500; }
+  .fchip .ct { font-size: 11px; opacity: 0.75; font-family: 'JetBrains Mono', monospace; }
+
+  /* Search */
+  .search-box { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 12px 18px; margin-bottom: 24px; display:flex; gap: 12px; align-items: center; transition: border-color .15s, box-shadow .15s; }
+  .search-box:focus-within { border-color: var(--terra); box-shadow: 0 0 0 4px var(--terra-soft); }
+  .search-box .ico { color: var(--muted); font-size: 14px; }
+  .search-box input { flex:1; border: 0; background: transparent; outline: none; font-family: 'Inter Tight'; font-size: 14px; color: var(--ink); }
+  .search-box input::placeholder { color: var(--faint); }
+
+  /* Cards */
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+  .tcard {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; cursor: pointer;
+    transition: all .25s ease;
+  }
+  .tcard:hover { transform: translateY(-3px); border-color: var(--terra); box-shadow: 0 18px 40px rgba(42,37,32,0.08), 0 1px 0 rgba(168,116,92,0.06); }
+  .tcard .img { aspect-ratio: 1; overflow: hidden; background: var(--bg-2); position: relative; }
+  .tcard .img img { width:100%; height:100%; object-fit: cover; transition: transform .4s ease; }
+  .tcard:hover .img img { transform: scale(1.05); }
+  .tcard .heart {
+    position: absolute; top: 10px; right: 10px; z-index: 2;
+    width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.9); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; color: var(--rose);
+    opacity: 0; transition: opacity .15s, transform .15s;
+  }
+  .tcard:hover .heart { opacity: 1; transform: scale(1.05); }
+  .tcard .body { padding: 12px 14px 14px; }
+  .tcard .name { font-size: 13.5px; font-weight: 500; color: var(--ink); line-height: 1.3; margin-bottom: 4px; }
+  .tcard .cat-row { display: flex; align-items: center; justify-content: space-between; }
+  .tcard .cat { font-size: 11px; color: var(--muted); }
+  .tcard .num { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--terra); letter-spacing: 0.06em; padding: 2px 7px; background: var(--terra-soft); border-radius: 99px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="bar">
+    <div class="brand">
+      <div class="seal">S</div>
+      <div class="brand-name">
+        <span class="ttl">SparkCode <em>Studio</em></span>
+        <span class="sub">— a quiet space for image work</span>
+      </div>
+    </div>
+    <div class="meta-line">
+      <span><span class="live">live</span></span>
+      <span>442 templates</span>
+      <span>·</span>
+      <span><b>397</b> on OSS</span>
+      <span>·</span>
+      <span>codex key</span>
+    </div>
+    <div class="actions">
+      <button class="btn">⚙</button>
+      <button class="btn">⬇ Export</button>
+      <button class="btn primary">＋ New</button>
+    </div>
+  </header>
+
+  <main class="split">
+    <section class="chat">
+      <div class="chat-head">
+        <div class="ttl"><span class="dot"></span><span class="name">Conversation</span></div>
+        <div class="meta">8 messages · today</div>
+      </div>
+      <div class="stream">
+        <div class="msg u">
+          <div class="bubble">画一只蹲在书堆里的橘猫，国画风格</div>
+          <div class="av">我</div>
+        </div>
+        <div class="msg b">
+          <div class="av">✦</div>
+          <div>
+            <div class="bubble">已生成 2 张候选 — 你可以拖到引用区，或继续描述微调。</div>
+            <div class="imgs">
+              <img src="https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-359-水墨双重曝光人物海报/example.jpeg" />
+              <img src="https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-123-插画艺术创作图/example.jpeg" />
+            </div>
+          </div>
+        </div>
+        <div class="msg u">
+          <div class="bubble">不错，把第一张的猫换成黑色，眼睛改成绿色</div>
+          <div class="av">我</div>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <span class="pill active">GPT Image 2</span>
+        <span class="pill">1024 × 1024</span>
+        <span class="pill">n=1</span>
+        <span class="spacer"></span>
+        <button class="ico-btn">＋ ref</button>
+        <button class="ico-btn">✦ polish</button>
+        <button class="ico-btn">↻ new</button>
+      </div>
+
+      <div class="composer">
+        <div class="composer-box">
+          <textarea placeholder="describe the image you want to create…">画一只黑色的猫，绿眼睛，蹲在书堆里，水墨晕染</textarea>
+          <div class="composer-bottom">
+            <span class="hint">↵ send · @ reference past images</span>
+            <span class="right"></span>
+            <button class="btn primary">Generate ✦</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="ws">
+      <nav class="tabs">
+        <div class="tab">大图</div>
+        <div class="tab">分支树</div>
+        <div class="tab">图库</div>
+        <div class="tab active">模板库</div>
+        <div class="tab">区域编辑</div>
+      </nav>
+
+      <div class="ws-body">
+        <div class="rec">
+          <div class="h">
+            <span class="star">✦</span>
+            <span class="label">Tell us what you'd like to make.</span>
+          </div>
+          <div class="row">
+            <input value="想给我的咖啡店做张极简菜单海报" />
+            <button>Suggest →</button>
+          </div>
+        </div>
+
+        <div class="filters">
+          <div class="fchip active">All<span class="ct">442</span></div>
+          <div class="fchip">UI<span class="ct">62</span></div>
+          <div class="fchip">海报<span class="ct">56</span></div>
+          <div class="fchip">图表<span class="ct">49</span></div>
+          <div class="fchip">摄影<span class="ct">24</span></div>
+          <div class="fchip">插画<span class="ct">23</span></div>
+          <div class="fchip">商品<span class="ct">20</span></div>
+          <div class="fchip">品牌<span class="ct">20</span></div>
+          <div class="fchip">人物<span class="ct">17</span></div>
+          <div class="fchip">建筑<span class="ct">16</span></div>
+        </div>
+
+        <div class="search-box">
+          <span class="ico">🔍</span>
+          <input placeholder="search by name, keyword, or tag…" />
+        </div>
+
+        <div class="grid" id="grid"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+  const samples = [
+    {n:'界面交互设计图', cn:'例 134', cat:'UI', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-134-界面交互设计图/example.jpeg'},
+    {n:'主题海报版式设计', cn:'例 144', cat:'海报', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-144-主题海报版式设计/example.jpeg'},
+    {n:'科普百科图', cn:'例 008', cat:'图表', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-8-科普百科图/example.jpeg'},
+    {n:'奢华魅力海滨摄影', cn:'例 277', cat:'摄影', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-277-奢华魅力黑人女性海滨摄影/example.jpeg'},
+    {n:'插画艺术创作图', cn:'例 123', cat:'插画', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-123-插画艺术创作图/example.jpeg'},
+    {n:'古希腊三哲时间轴', cn:'例 375', cat:'建筑', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-375-古希腊三哲时间轴城市图/example.jpeg'},
+    {n:'Scrapbook 真人迷你', cn:'例 371', cat:'其他', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-371-scrapbook-真人图与迷你分身/example.jpeg'},
+    {n:'水墨双重曝光人物海报', cn:'例 359', cat:'海报', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-359-水墨双重曝光人物海报/example.jpeg'},
+    {n:'雅致图案时尚单品', cn:'例 216', cat:'其他', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-216-雅致图案四款时尚单品设计/example.png'},
+    {n:'樱花树下双马尾', cn:'例 208', cat:'其他', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-208-樱花树下害羞双马尾少女/example.jpeg'},
+    {n:'街头炫瓶男模', cn:'例 322', cat:'其他', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-322-街头炫瓶男模/example.jpeg'},
+    {n:'主题海报版式设计', cn:'例 122', cat:'海报', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-122-主题海报版式设计/example.jpeg'},
+  ];
+  const grid = document.getElementById('grid');
+  grid.innerHTML = samples.map((s,i) => `
+    <article class="tcard">
+      <div class="img">
+        <span class="heart">♡</span>
+        <img src="${s.img}" alt="${s.n}" loading="lazy" decoding="async" />
+      </div>
+      <div class="body">
+        <div class="name">${s.n}</div>
+        <div class="cat-row">
+          <span class="cat">${s.cat}</span>
+          <span class="num">№ ${String(i+1).padStart(3,'0')}</span>
+        </div>
+      </div>
+    </article>
+  `).join('');
+</script>
+</body>
+</html>

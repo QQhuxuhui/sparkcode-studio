@@ -22,24 +22,24 @@ export function Workspace() {
   const tabs = ALL_TABS.filter((t) => !t.modelGated || supportsMask);
 
   return (
-    <section className="flex flex-col min-h-0 bg-bg">
-      <div className="flex gap-0 border-b border-border px-6 bg-paper-warm">
+    <section className="flex flex-col min-h-0 bg-bg/50">
+      <div className="flex gap-8 border-b border-border px-8 bg-paper-warm pt-1 shadow-sm relative z-10">
         {tabs.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`relative px-5 py-3.5 font-display text-[14px] tracking-wider transition-colors ${
-              t.id === activeTab ? 'text-accent font-semibold' : 'text-muted hover:text-ink'
+            className={`relative pb-3 pt-2.5 font-display text-[15px] tracking-wider transition-colors outline-none ${
+              t.id === activeTab ? 'text-accent font-bold' : 'text-muted hover:text-ink'
             }`}
           >
             {t.label}
             {t.id === activeTab && (
-              <span className="absolute left-3 right-3 -bottom-px h-0.5 bg-accent rounded-sm" />
+              <span className="absolute left-0 right-0 -bottom-px h-[3px] bg-accent rounded-t-md" />
             )}
           </button>
         ))}
       </div>
-      <div className="flex-1 overflow-auto p-6">
+      <div className="flex-1 overflow-auto p-6 relative z-0">
         {activeTab === 'big'     && <BigImageTab />}
         {activeTab === 'tree'    && <TreeTab />}
         {activeTab === 'library'   && <LibraryTab />}
