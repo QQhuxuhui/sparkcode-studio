@@ -1,0 +1,68 @@
+# ─── SparkCode Studio · production-ish compose ──────────────────────
+# Single full-stack service. The app reads DATABASE_URL from .env (your
+# cloud Postgres at 104.194.91.23:5444 by default). To swap to a local
+# PG container instead, uncomment the `db` service block at the bottom
+# and update DATABASE_URL in .env to: postgres://sparkcode:sparkcode@db:5432/sparkcode_studio
+#
+# Usage:
+#   docker compose up -d --build      # build + run in background
+#   docker compose logs -f app        # follow logs
+#   docker compose down               # stop & remove
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: sparkcode-studio:latest
+    container_name: sparkcode-studio
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "3001:3001"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    # Uncomment if you also enable the local `db` service below
+    # depends_on:
+    #   db:
+    #     condition: service_healthy
+    # networks:
+    #   - sparkcode-net
+
+  # ─── Optional local Postgres (for offline dev / disconnected demos) ─
+  # Uncomment this block and the depends_on / networks bits above if you
+  # don't want to depend on the cloud Postgres. Don't forget to update
+  # DATABASE_URL in .env:
+  #   DATABASE_URL=postgres://sparkcode:sparkcode@db:5432/sparkcode_studio
+  #
+  # db:
+  #   image: postgres:16-alpine
+  #   container_name: sparkcode-db
+  #   restart: unless-stopped
+  #   environment:
+  #     POSTGRES_USER: sparkcode
+  #     POSTGRES_PASSWORD: sparkcode
+  #     POSTGRES_DB: sparkcode_studio
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - sparkcode-pgdata:/var/lib/postgresql/data
+  #   healthcheck:
+  #     test: ["CMD", "pg_isready", "-U", "sparkcode", "-d", "sparkcode_studio"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #   networks:
+  #     - sparkcode-net
+
+# volumes:
+#   sparkcode-pgdata:
+
+# networks:
+#   sparkcode-net:
+#     driver: bridge

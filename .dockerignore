@@ -1,0 +1,28 @@
+# Build artifacts
+node_modules
+dist
+.vite
+
+# Local-only state
+.env
+.env.*.local
+.DS_Store
+*.local
+
+# VCS / editor / agent
+.git
+.gitignore
+.github
+.claude
+.vscode
+.idea
+
+# Docs and demos that are never needed in the image
+docs
+public/preview
+*.md
+!README.md
+
+# Tests / examples / lockfile companions
+*.test.ts
+*.test.tsx
