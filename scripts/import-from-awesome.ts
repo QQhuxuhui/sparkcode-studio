@@ -182,7 +182,9 @@ function parseGalleryDoc(md: string): ParsedTemplate[] {
     const promptMatch = content.match(/```text\n([\s\S]*?)\n```/);
     if (!promptMatch) continue;
     const promptBody = promptMatch[1].trim();
-    const imgMatch = content.match(/!\[[^\]]*\]\(([^)]+)\)/);
+    // Non-greedy + [\s\S] so alt text may span newlines and contain escaped
+    // brackets (e.g. `![\[CORE TASK\]\nTransform...](path)` in cases 78/79/80).
+    const imgMatch = content.match(/!\[[\s\S]*?\]\(([^)]+)\)/);
     const imageUrl = imgMatch ? resolveImageUrl(imgMatch[1].trim()) : null;
     const sourceMatch = content.match(/\*\*来源：\*\*\s*([^\n]+)/);
     const tags: string[] = ['gallery'];
