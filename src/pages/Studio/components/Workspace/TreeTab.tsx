@@ -144,6 +144,13 @@ export function TreeTab() {
         width={maxX} height={maxY}
         className="bg-paper-warm border border-border rounded"
       >
+        <defs>
+          {(nodes ?? []).filter((n) => positions.has(n.id)).map((n) => (
+            <clipPath id={`clip-${n.id}`} key={`clip-${n.id}`}>
+              <rect x={positions.get(n.id)!.x + 4} y={positions.get(n.id)!.y + 4} width={NODE_W - 8} height={NODE_H - 8} rx={4} />
+            </clipPath>
+          ))}
+        </defs>
         {/* 笔触风曲线连线 */}
         {(nodes ?? []).filter((n) => n.parentNodeId && positions.has(n.parentNodeId)).map((n) => {
           const p = positions.get(n.parentNodeId!)!;
@@ -176,10 +183,11 @@ export function TreeTab() {
               style={{ cursor: 'pointer', opacity: isRerolling ? 0.5 : 1 }}
             >
               <rect
-                x={p.x} y={p.y} width={NODE_W} height={NODE_H} rx={3}
+                x={p.x} y={p.y} width={NODE_W} height={NODE_H} rx={6}
                 fill="#ffffff"
-                stroke={isSelected ? '#a82828' : '#cfc4a5'}
-                strokeWidth={isSelected ? 2.5 : 1}
+                stroke={isSelected ? '#a82828' : '#e6dec8'}
+                strokeWidth={isSelected ? 3 : 1.5}
+                filter="drop-shadow(0 4px 6px rgba(80,50,20,0.06))"
               />
               {firstImg && (
                 <image
@@ -187,10 +195,11 @@ export function TreeTab() {
                   x={p.x + 4} y={p.y + 4}
                   width={NODE_W - 8} height={NODE_H - 8}
                   preserveAspectRatio="xMidYMid slice"
+                  clipPath={`url(#clip-${n.id})`}
                 />
               )}
               <rect
-                x={p.x + 4} y={p.y + 4} width={20} height={20} rx={2}
+                x={p.x + 4} y={p.y + 4} width={20} height={20} rx={4}
                 fill={isSelected ? '#a82828' : 'rgba(168,40,40,0.85)'}
               />
               <text
