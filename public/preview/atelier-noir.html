@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Atelier Noir · SparkCode</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter+Tight:wght@300;400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg-0:#0a0a0d;
+    --bg-1:#0f0f14;
+    --bg-2:#16161d;
+    --bg-3:#1d1d27;
+    --line:#26262f;
+    --line-2:#2e2e3b;
+    --ink:#e9e8e3;
+    --ink-soft:#a4a097;
+    --muted:#6b6862;
+    --lime:#d4ff3a;
+    --lime-soft:#d4ff3a22;
+    --red:#ff4060;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg-0); color: var(--ink);
+    font-family: 'Inter Tight', system-ui, sans-serif; -webkit-font-smoothing: antialiased;
+    font-feature-settings: 'ss01', 'cv11';
+  }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg-0); }
+  ::-webkit-scrollbar-thumb { background: var(--line-2); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--lime); }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  body::before {
+    content:''; position: fixed; inset:0; pointer-events:none; z-index: 0;
+    background-image: linear-gradient(var(--bg-2) 1px, transparent 1px), linear-gradient(90deg, var(--bg-2) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 30%, transparent 80%);
+    opacity: 0.45;
+  }
+
+  /* App shell */
+  .app { position: relative; z-index: 1; min-height: 100vh; display: grid; grid-template-rows: 56px 1fr 28px; }
+
+  /* Header */
+  header.bar {
+    display: grid; grid-template-columns: auto 1fr auto;
+    align-items: center; padding: 0 24px; gap: 24px;
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, rgba(15,15,20,0.95), rgba(10,10,13,0.85));
+    backdrop-filter: blur(8px);
+  }
+  .brand { display: flex; align-items: center; gap: 12px; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; letter-spacing: 0.1em; }
+  .brand .glyph {
+    width: 28px; height: 28px; background: var(--lime); color: var(--bg-0); display:flex; align-items:center; justify-content:center; font-weight:700;
+    box-shadow: 0 0 0 1px var(--bg-0), 0 0 0 2px var(--lime), 0 0 12px rgba(212,255,58,0.4);
+  }
+  .brand small { color: var(--muted); font-weight: 400; margin-left: 4px; }
+  .breadcrumb { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 0.08em; }
+  .breadcrumb b { color: var(--ink); font-weight: 500; }
+  .actions { display:flex; align-items:center; gap: 8px; }
+  .btn {
+    border: 1px solid var(--line-2); background: transparent; color: var(--ink-soft);
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 7px 12px; cursor: pointer; transition: all .15s ease;
+  }
+  .btn:hover { border-color: var(--lime); color: var(--lime); background: var(--lime-soft); }
+  .btn.primary { background: var(--lime); color: var(--bg-0); border-color: var(--lime); font-weight: 700; }
+  .btn.primary:hover { box-shadow: 0 0 16px rgba(212,255,58,0.3); }
+
+  /* Main */
+  main { display: grid; grid-template-columns: 480px 1fr; min-height: 0; }
+  .pane { border-right: 1px solid var(--line); padding: 32px 28px; overflow:auto; min-height: 0; background: var(--bg-1); position:relative; }
+  .pane::before { content:''; position:absolute; left: 32px; top: 0; bottom: 0; width: 1px; background: linear-gradient(180deg, transparent, var(--line-2) 20%, var(--line-2) 80%, transparent); }
+
+  .lbl { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 14px; }
+
+  .composer { background: var(--bg-2); border: 1px solid var(--line); padding: 16px; }
+  .composer textarea {
+    width: 100%; background: transparent; border: 0; color: var(--ink); resize: vertical; min-height: 100px;
+    font-family: 'Inter Tight', sans-serif; font-size: 14px; line-height: 1.6; outline: none;
+  }
+  .composer textarea::placeholder { color: var(--muted); }
+  .composer-tools { display:flex; align-items:center; justify-content: space-between; padding-top: 12px; border-top: 1px solid var(--line); margin-top: 12px; }
+  .pill { font-family: 'JetBrains Mono', monospace; font-size: 10px; padding: 3px 8px; border: 1px solid var(--line-2); color: var(--ink-soft); letter-spacing: 0.08em; }
+
+  /* Workspace */
+  .workspace { padding: 0 0 0 0; overflow:auto; min-height: 0; }
+  .tabs { display:flex; gap: 0; border-bottom: 1px solid var(--line); padding: 0 28px; background: var(--bg-1); }
+  .tab { padding: 16px 18px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); border-bottom: 2px solid transparent; cursor: pointer; }
+  .tab.active { color: var(--lime); border-bottom-color: var(--lime); }
+  .tab .num { color: var(--ink-soft); font-weight: 500; margin-right: 8px; }
+  .tab.active .num { color: var(--lime); }
+
+  .ws-body { padding: 28px; }
+
+  /* AI recommend bar */
+  .rec {
+    border: 1px solid var(--lime); background:
+      linear-gradient(180deg, rgba(212,255,58,0.05), rgba(212,255,58,0.01));
+    padding: 18px 20px; margin-bottom: 28px; position: relative;
+  }
+  .rec::before {
+    content: ''; position: absolute; left: -1px; top: -1px; bottom: -1px; width: 4px; background: var(--lime);
+    box-shadow: 0 0 16px rgba(212,255,58,0.4);
+  }
+  .rec .row { display: flex; gap: 12px; align-items: center; }
+  .rec input {
+    flex: 1; background: var(--bg-0); border: 1px solid var(--line-2); color: var(--ink);
+    font-family: 'Inter Tight', sans-serif; font-size: 14px; padding: 11px 14px; outline: none;
+  }
+  .rec input:focus { border-color: var(--lime); box-shadow: 0 0 0 2px rgba(212,255,58,0.18); }
+  .rec .head { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--lime); letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+  .rec .head::after { content:''; flex:1; height: 1px; background: var(--lime); opacity:0.2; }
+  .rec .head .blink { display: inline-block; width: 8px; height: 8px; background: var(--lime); animation: blink 1.5s infinite; box-shadow: 0 0 8px var(--lime); }
+  @keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0.3; } }
+
+  /* Layout */
+  .layout { display: grid; grid-template-columns: 200px 1fr; gap: 28px; }
+  .nav { border-right: 1px solid var(--line); padding-right: 20px; }
+  .nav-item { display:flex; justify-content: space-between; align-items: baseline; padding: 8px 12px; cursor: pointer; font-size: 13px; color: var(--ink-soft); transition: all .15s; }
+  .nav-item:hover { color: var(--ink); background: var(--bg-2); }
+  .nav-item.active { color: var(--lime); background: rgba(212,255,58,0.08); border-left: 2px solid var(--lime); padding-left: 10px; }
+  .nav-item .ct { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); }
+  .nav-item.active .ct { color: var(--lime); }
+
+  /* Search */
+  .search input {
+    width: 100%; background: var(--bg-2); border: 1px solid var(--line-2); color: var(--ink);
+    font-family: 'Inter Tight', sans-serif; font-size: 13px; padding: 10px 14px; outline: none; margin-bottom: 20px;
+  }
+  .search input:focus { border-color: var(--lime); }
+
+  /* Template grid */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+  .tcard {
+    background: var(--bg-1); border: 1px solid var(--line); position: relative;
+    overflow: hidden; cursor: pointer; transition: all .2s ease;
+  }
+  .tcard::before {
+    content: attr(data-idx); position: absolute; top: 8px; left: 8px; z-index: 2;
+    font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--lime);
+    background: var(--bg-0); padding: 2px 6px; border: 1px solid var(--line-2); letter-spacing: 0.1em;
+  }
+  .tcard:hover { border-color: var(--lime); }
+  .tcard:hover .img-wrap::after { opacity: 1; }
+  .tcard:hover .img-wrap::before { opacity: 1; }
+  .img-wrap { aspect-ratio: 1; overflow: hidden; position: relative; background: var(--bg-2); }
+  .img-wrap img { width: 100%; height: 100%; object-fit: cover; filter: saturate(0.92) contrast(1.05); transition: transform .35s ease, filter .25s; }
+  .tcard:hover .img-wrap img { transform: scale(1.05); filter: saturate(1.1); }
+  .img-wrap::before { /* corner brackets — top */
+    content:''; position: absolute; inset: 8px; pointer-events:none; opacity:0;
+    background:
+      linear-gradient(var(--lime), var(--lime)) top left/16px 1px no-repeat,
+      linear-gradient(var(--lime), var(--lime)) top left/1px 16px no-repeat,
+      linear-gradient(var(--lime), var(--lime)) top right/16px 1px no-repeat,
+      linear-gradient(var(--lime), var(--lime)) top right/1px 16px no-repeat,
+      linear-gradient(var(--lime), var(--lime)) bottom left/16px 1px no-repeat,
+      linear-gradient(var(--lime), var(--lime)) bottom left/1px 16px no-repeat,
+      linear-gradient(var(--lime), var(--lime)) bottom right/16px 1px no-repeat,
+      linear-gradient(var(--lime), var(--lime)) bottom right/1px 16px no-repeat;
+    transition: opacity .15s;
+  }
+  .img-wrap::after { /* scanline overlay on hover */
+    content:''; position:absolute; inset:0; opacity:0;
+    background: linear-gradient(180deg, transparent 50%, rgba(212,255,58,0.05) 50%);
+    background-size: 100% 4px;
+    transition: opacity .2s;
+  }
+  .tcard .meta { padding: 10px 12px 12px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 2px; }
+  .tcard .name { font-size: 12px; color: var(--ink); font-weight: 500; line-height: 1.3; }
+  .tcard .cat { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; }
+
+  /* Footer */
+  footer.bar {
+    border-top: 1px solid var(--line); background: var(--bg-1);
+    display:flex; justify-content: space-between; align-items: center;
+    padding: 0 24px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 0.16em; text-transform: uppercase;
+  }
+  footer.bar .lime { color: var(--lime); }
+  footer.bar .lime::before { content:'●'; margin-right: 6px; }
+
+  /* Right floating recommendation chips */
+  .rec-results { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
+  .rec-chip { background: var(--bg-0); border: 1px solid var(--line-2); padding: 10px 12px; }
+  .rec-chip:hover { border-color: var(--lime); }
+  .rec-chip .rk { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--lime); letter-spacing: 0.16em; }
+  .rec-chip .nm { font-size: 13px; color: var(--ink); margin-top: 4px; line-height: 1.3; }
+  .rec-chip .why { font-size: 11px; color: var(--ink-soft); margin-top: 6px; line-height: 1.45; }
+
+  .hint { position: fixed; right: 16px; top: 78px; padding: 10px 14px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; color: var(--lime); background: var(--bg-0); border: 1px solid var(--lime); z-index: 5; }
+  .hint::before { content: '◉'; margin-right: 6px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="bar">
+    <div class="brand">
+      <div class="glyph">▶</div>
+      SPARKCODE<small>/STUDIO</small>
+    </div>
+    <div class="breadcrumb">[ STATUS ] <b>READY</b> / 442 TEMPLATES / 397 ON OSS / KEY: <b>CODEX</b></div>
+    <div class="actions">
+      <button class="btn">⚙ KEYS</button>
+      <button class="btn">⬇ EXPORT</button>
+      <button class="btn primary">▶ NEW</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="pane">
+      <div class="lbl">// Composer · Chat</div>
+      <div class="composer">
+        <textarea placeholder="describe the image you want — or @reference an existing one..."></textarea>
+        <div class="composer-tools">
+          <div style="display:flex; gap:6px;">
+            <span class="pill">model: GPT-IMAGE-2</span>
+            <span class="pill">size: 1024×1024</span>
+            <span class="pill">n: 1</span>
+          </div>
+          <button class="btn primary">▶ GENERATE</button>
+        </div>
+      </div>
+
+      <div class="lbl" style="margin-top: 36px;">// History · 0 messages</div>
+      <div style="font-family:'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing:0.06em; padding: 24px 16px; border: 1px dashed var(--line-2); text-align:center;">
+        — empty stream —<br/>
+        type a prompt above to begin
+      </div>
+    </section>
+
+    <section class="workspace">
+      <nav class="tabs">
+        <div class="tab"><span class="num">01</span>大图</div>
+        <div class="tab"><span class="num">02</span>分支树</div>
+        <div class="tab"><span class="num">03</span>图库</div>
+        <div class="tab active"><span class="num">04</span>模板库</div>
+        <div class="tab"><span class="num">05</span>区域编辑</div>
+      </nav>
+
+      <div class="ws-body">
+        <div class="rec">
+          <div class="head"><span class="blink"></span>AI · 模板推荐 · prefilter→pick</div>
+          <div class="row">
+            <input value="想给我的咖啡店做张极简风格菜单海报" />
+            <button class="btn primary">EXEC ▶</button>
+          </div>
+          <div class="rec-results">
+            <div class="rec-chip">
+              <div class="rk">RANK 01</div>
+              <div class="nm">例 144：主题海报版式设计</div>
+              <div class="why">极简版式构图与菜单海报意图直接吻合</div>
+            </div>
+            <div class="rec-chip">
+              <div class="rk">RANK 02</div>
+              <div class="nm">例 122：主题海报版式设计</div>
+              <div class="why">网格化排版，适合产品菜单陈列</div>
+            </div>
+            <div class="rec-chip">
+              <div class="rk">RANK 03</div>
+              <div class="nm">例 359：水墨双重曝光人物海报</div>
+              <div class="why">视觉冲击强，适合咖啡店主视觉但偏个性</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="layout">
+          <aside class="nav">
+            <div class="lbl" style="margin-bottom: 8px;">// CATEGORY</div>
+            <div class="nav-item"><span>全部</span><span class="ct">442</span></div>
+            <div class="nav-item active"><span>UI与界面</span><span class="ct">62</span></div>
+            <div class="nav-item"><span>海报与排版</span><span class="ct">56</span></div>
+            <div class="nav-item"><span>图表与信息可视化</span><span class="ct">49</span></div>
+            <div class="nav-item"><span>摄影与写实</span><span class="ct">24</span></div>
+            <div class="nav-item"><span>插画与艺术</span><span class="ct">23</span></div>
+            <div class="nav-item"><span>商品与电商</span><span class="ct">20</span></div>
+            <div class="nav-item"><span>品牌与标志</span><span class="ct">20</span></div>
+            <div class="nav-item"><span>人物与角色</span><span class="ct">17</span></div>
+            <div class="nav-item"><span>建筑与空间</span><span class="ct">16</span></div>
+            <div class="nav-item"><span>其他案例</span><span class="ct">115</span></div>
+          </aside>
+
+          <main>
+            <div class="search"><input placeholder="search by name / suffix / tag..." /></div>
+            <div class="grid" id="grid"></div>
+          </main>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="bar">
+    <span>▌ ATELIER NOIR / V1 / DARK</span>
+    <span><span class="lime">CONNECTION ALIVE</span> ／ TPL-EVENT 04 / 442 ／ DB OK ／ OSS-CN-SHENZHEN</span>
+    <span>↳ PRESS / TO COMMAND PALETTE</span>
+  </footer>
+</div>
+
+<div class="hint">DEMO ／ SCROLL TO EXPLORE</div>
+
+<script>
+  const samples = [
+    {name:'例 134：界面交互设计图', cat:'UI与界面', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-134-界面交互设计图/example.jpeg'},
+    {name:'例 144：主题海报版式设计', cat:'海报与排版', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-144-主题海报版式设计/example.jpeg'},
+    {name:'例 8：科普百科图', cat:'图表可视化', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-8-科普百科图/example.jpeg'},
+    {name:'例 277：奢华魅力海滨摄影', cat:'摄影与写实', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-277-奢华魅力黑人女性海滨摄影/example.jpeg'},
+    {name:'例 123：插画艺术创作图', cat:'插画与艺术', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-123-插画艺术创作图/example.jpeg'},
+    {name:'例 375：古希腊三哲时间轴', cat:'建筑与空间', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-375-古希腊三哲时间轴城市图/example.jpeg'},
+    {name:'例 371：Scrapbook 真人迷你', cat:'其他案例', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-371-scrapbook-真人图与迷你分身/example.jpeg'},
+    {name:'例 359：水墨双重曝光海报', cat:'海报与排版', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-359-水墨双重曝光人物海报/example.jpeg'},
+    {name:'例 216：雅致图案时尚单品', cat:'其他案例', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-216-雅致图案四款时尚单品设计/example.png'},
+    {name:'例 322：街头炫瓶男模', cat:'其他案例', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-322-街头炫瓶男模/example.jpeg'},
+    {name:'例 208：樱花树下双马尾', cat:'其他案例', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-208-樱花树下害羞双马尾少女/example.jpeg'},
+    {name:'例 122：主题海报版式设计', cat:'海报与排版', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-122-主题海报版式设计/example.jpeg'},
+  ];
+  const grid = document.getElementById('grid');
+  grid.innerHTML = samples.map((s, i) => `
+    <article class="tcard" data-idx="T-${String(i+1).padStart(3,'0')}">
+      <div class="img-wrap"><img src="${s.img}" alt="${s.name}" loading="lazy" decoding="async" /></div>
+      <div class="meta">
+        <span class="name">${s.name}</span>
+        <span class="cat">${s.cat}</span>
+      </div>
+    </article>
+  `).join('');
+</script>
+</body>
+</html>

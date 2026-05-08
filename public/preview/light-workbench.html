@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Workbench Light · SparkCode</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;700&family=Cormorant+Garamond:ital,wght@0,500;1,500&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --paper:#f4f0e6;
+    --paper-warm:#ede6d2;
+    --paper-cool:#e8e3d0;
+    --paper-bright:#fdfaf3;
+    --rule:#1a181410;
+    --rule-strong:#1a181428;
+    --ink:#1a1814;
+    --ink-soft:#3f3a30;
+    --muted:#7a7268;
+    --faint:#a89e88;
+    --vermillion:#a82828;
+    --vermillion-deep:#7a1c1c;
+    --indigo:#1e3a5f;
+    --indigo-deep:#0f2540;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; height:100%; background: var(--paper); color: var(--ink);
+    font-family: 'Inter Tight', -apple-system, sans-serif; -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #cfc4a5; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--vermillion); }
+  .serif-cn { font-family: 'Noto Serif SC', 'Songti SC', serif; }
+  .serif-en { font-family: 'Cormorant Garamond', serif; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  body::before {
+    content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background-image:
+      radial-gradient(at 0% 0%,    rgba(168,40,40,0.04) 0%, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(30,58,95,0.05) 0%, transparent 55%),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.42  0 0 0 0 0.34  0 0 0 0 0.18  0 0 0 0.05 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    background-size: auto, auto, 200px 200px;
+  }
+
+  .app { position: relative; z-index: 1; height: 100vh; display: grid; grid-template-rows: 64px 1fr; }
+
+  /* Header */
+  header.bar {
+    display: grid; grid-template-columns: auto 1fr auto; align-items: center; padding: 0 28px; gap: 24px;
+    border-bottom: 1px solid var(--ink); position: relative;
+    background: linear-gradient(180deg, var(--paper-bright) 0%, var(--paper) 100%);
+  }
+  header.bar::after {
+    content:''; position: absolute; left: 28px; right: 28px; bottom: -3px; height: 1px;
+    background: linear-gradient(90deg, transparent 0%, var(--vermillion) 18%, var(--vermillion) 82%, transparent 100%);
+  }
+  .brand { display:flex; align-items:center; gap: 12px; }
+  .seal {
+    width: 34px; height: 34px; background: var(--vermillion); color: var(--paper-bright);
+    display:flex; align-items:center; justify-content:center; transform: rotate(-5deg);
+    font-family: 'Noto Serif SC', serif; font-weight: 700; font-size: 17px;
+    box-shadow: 1.5px 1.5px 0 var(--indigo);
+  }
+  .brand-name { display:flex; flex-direction: column; gap: 0; line-height: 1.15; }
+  .brand-name .cn { font-family: 'Noto Serif SC', serif; font-size: 17px; font-weight: 700; letter-spacing: 0.04em; }
+  .brand-name .en { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 11px; color: var(--indigo); letter-spacing: 0.06em; }
+  .meta-line { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 0.06em; }
+  .meta-line b { color: var(--ink); font-weight: 500; }
+  .meta-line .vm { color: var(--vermillion); }
+  .actions { display:flex; gap: 8px; }
+  .btn {
+    background: var(--paper-bright); border: 1px solid var(--ink); color: var(--ink);
+    padding: 7px 13px; cursor: pointer; font-size: 12.5px; transition: all .15s; font-family: 'Inter Tight';
+  }
+  .btn:hover { background: var(--ink); color: var(--paper); }
+  .btn.primary { background: var(--vermillion); color: var(--paper-bright); border-color: var(--vermillion); font-weight: 500; box-shadow: 1.5px 1.5px 0 var(--indigo); }
+  .btn.primary:hover { background: var(--vermillion-deep); transform: translate(-1px,-1px); box-shadow: 2.5px 2.5px 0 var(--indigo); }
+
+  /* Split: chat (left) | workspace (right) */
+  main.split { display: grid; grid-template-columns: 440px 1fr; min-height: 0; }
+
+  /* === CHAT PANEL === */
+  section.chat {
+    display: flex; flex-direction: column; min-height: 0;
+    border-right: 1px solid var(--rule-strong);
+    background: var(--paper-bright);
+    background-image:
+      linear-gradient(90deg, transparent 95%, var(--vermillion) 95%, var(--vermillion) 95.4%, transparent 95.4%);
+  }
+  .chat-head {
+    padding: 14px 24px; border-bottom: 1px solid var(--rule-strong);
+    display:flex; justify-content: space-between; align-items: center;
+  }
+  .chat-head .ttl { font-family: 'Noto Serif SC'; font-size: 14px; font-weight: 500; }
+  .chat-head .meta { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 0.12em; }
+  .stream { flex: 1; overflow: auto; padding: 24px; display: flex; flex-direction: column; gap: 18px; }
+  .msg { display: flex; gap: 12px; }
+  .msg .who { font-family: 'Noto Serif SC'; font-size: 11px; color: var(--muted); width: 40px; flex-shrink: 0; padding-top: 4px; }
+  .msg .who.u { color: var(--vermillion); font-weight: 700; }
+  .msg .who.b { color: var(--indigo); font-weight: 500; }
+  .msg .body { flex: 1; }
+  .msg .text { font-size: 13.5px; line-height: 1.6; color: var(--ink); }
+  .msg .img { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 8px; max-width: 280px; }
+  .msg .img img { width: 100%; aspect-ratio: 1; object-fit: cover; border: 1px solid var(--rule-strong); }
+
+  .toolbar {
+    border-top: 1px solid var(--rule-strong); padding: 10px 16px;
+    display: flex; align-items: center; gap: 12px;
+    background: var(--paper);
+  }
+  .toolbar select, .toolbar .pill {
+    background: transparent; border: 1px solid var(--rule-strong); padding: 5px 10px;
+    font-family: 'Inter Tight'; font-size: 11.5px; color: var(--ink-soft); cursor: pointer;
+  }
+  .toolbar .pill.active { border-color: var(--vermillion); color: var(--vermillion); }
+  .toolbar .spacer { flex: 1; }
+  .toolbar .ico-btn { background: transparent; border: 0; color: var(--muted); cursor: pointer; padding: 4px 6px; font-size: 13px; }
+  .toolbar .ico-btn:hover { color: var(--vermillion); }
+
+  .composer {
+    border-top: 2px solid var(--ink); padding: 14px 18px;
+    background: var(--paper-bright);
+    box-shadow: 0 -2px 0 var(--vermillion);
+    position: relative;
+  }
+  .composer::before { content: '✑'; position: absolute; top: -14px; right: 18px; background: var(--paper); padding: 0 8px; color: var(--vermillion); font-size: 14px; }
+  .composer textarea {
+    width: 100%; background: transparent; border: 0; resize: vertical; min-height: 80px;
+    font-family: 'Noto Serif SC'; font-size: 14.5px; line-height: 1.55; color: var(--ink); outline: none;
+  }
+  .composer textarea::placeholder { color: var(--faint); font-style: normal; }
+  .composer-bottom { display:flex; align-items:center; gap: 10px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--rule-strong); }
+  .composer-bottom .hint { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 0.06em; }
+  .composer-bottom .right { margin-left: auto; }
+
+  /* === WORKSPACE === */
+  section.ws { display: flex; flex-direction: column; min-height: 0; }
+  .tabs {
+    display:flex; gap: 0; padding: 0 28px; border-bottom: 1px solid var(--ink);
+    background: var(--paper);
+  }
+  .tab {
+    padding: 14px 22px; cursor: pointer; position: relative;
+    font-family: 'Noto Serif SC', serif; font-size: 14px; color: var(--muted); transition: color .15s;
+  }
+  .tab:hover { color: var(--ink); }
+  .tab.active { color: var(--vermillion); font-weight: 700; }
+  .tab.active::after { content:''; position:absolute; left: 22px; right: 22px; bottom: -1px; height: 2px; background: var(--vermillion); box-shadow: 0 1px 0 var(--indigo); }
+
+  .ws-body { flex: 1; overflow: auto; padding: 24px 28px 28px; min-height: 0; }
+
+  .rec {
+    border: 1px solid var(--ink); padding: 16px 20px 14px; margin-bottom: 24px;
+    background: rgba(255,255,255,0.55); position: relative;
+  }
+  .rec::before { content:'AI 推荐 · 编辑部'; position: absolute; top: -10px; left: 16px; padding: 2px 10px; background: var(--paper); font-family: 'Noto Serif SC'; font-size: 12px; font-weight: 500; color: var(--vermillion); letter-spacing: 0.04em; }
+  .rec .row { display:flex; gap: 10px; align-items: center; }
+  .rec input {
+    flex: 1; background: transparent; border: 0; border-bottom: 1.5px solid var(--ink);
+    padding: 6px 0 8px; outline: none;
+    font-family: 'Noto Serif SC'; font-size: 14.5px; color: var(--ink);
+  }
+  .rec input::placeholder { color: var(--faint); }
+  .rec button {
+    background: var(--vermillion); color: var(--paper-bright); border: 0; padding: 8px 16px; cursor: pointer;
+    font-family: 'Noto Serif SC'; font-size: 12.5px; letter-spacing: 0.1em; font-weight: 500;
+    box-shadow: 1.5px 1.5px 0 var(--indigo); transition: all .12s ease;
+    white-space: nowrap;
+  }
+  .rec button:hover { transform: translate(-1px,-1px); box-shadow: 2.5px 2.5px 0 var(--indigo); }
+
+  .layout { display: grid; grid-template-columns: 200px 1fr; gap: 24px; }
+  .nav { padding-right: 18px; border-right: 1px solid var(--rule-strong); }
+  .nav-h { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 12px; }
+  .nav-item { display:flex; justify-content: space-between; align-items: baseline; padding: 6px 10px; cursor: pointer; font-family: 'Noto Serif SC'; font-size: 13.5px; color: var(--ink-soft); }
+  .nav-item:hover { color: var(--ink); background: var(--paper-warm); }
+  .nav-item.active { color: var(--vermillion); background: rgba(168,40,40,0.06); border-left: 2px solid var(--vermillion); padding-left: 8px; font-weight: 500; }
+  .nav-item .ct { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--faint); }
+  .nav-item.active .ct { color: var(--vermillion); }
+
+  .search { display:flex; align-items: center; gap: 12px; margin-bottom: 16px; padding: 4px 0; border-bottom: 1px dashed var(--rule-strong); }
+  .search input { flex:1; background: transparent; border: 0; outline: none; padding: 4px 0; font-family: 'Noto Serif SC'; font-size: 14px; color: var(--ink); }
+  .search input::placeholder { color: var(--faint); }
+  .search-ico { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--vermillion); letter-spacing: 0.1em; }
+
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+  .plate {
+    background: rgba(255,255,255,0.6); border: 1px solid var(--rule-strong);
+    box-shadow: 2px 2px 0 var(--indigo);
+    position: relative; transition: all .2s; cursor: pointer;
+  }
+  .plate:hover { transform: translate(-1px,-1px); box-shadow: 3px 3px 0 var(--vermillion); border-color: var(--vermillion); }
+  .plate-frame { padding: 8px; }
+  .plate-img { aspect-ratio: 1; background: var(--paper-cool); overflow: hidden; }
+  .plate-img img { width:100%; height:100%; object-fit: cover; }
+  .seal-mark {
+    position: absolute; top: 10px; right: 10px; z-index: 2;
+    width: 26px; height: 26px; background: var(--vermillion); color: var(--paper);
+    display: flex; align-items:center; justify-content:center;
+    font-family: 'Noto Serif SC'; font-weight: 700; font-size: 11px; transform: rotate(-6deg);
+    opacity: 0; transition: opacity .25s, transform .25s;
+  }
+  .plate:hover .seal-mark { opacity: 1; transform: rotate(0deg); }
+  .plate-meta { padding: 0 12px 12px; }
+  .plate-num { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.16em; color: var(--indigo); margin-bottom: 4px; }
+  .plate-num .vm { color: var(--vermillion); }
+  .plate-name { font-family: 'Noto Serif SC', serif; font-size: 13.5px; font-weight: 500; line-height: 1.3; color: var(--ink); }
+  .plate-cat { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="bar">
+    <div class="brand">
+      <div class="seal">图</div>
+      <div class="brand-name">
+        <span class="cn">SparkCode 工作台</span>
+        <span class="en">— studio · vol.04 / 2026</span>
+      </div>
+    </div>
+    <div class="meta-line">
+      [ 状态 ] <b>就绪</b> ／ 442 模板 ／ <span class="vm">397 已上 OSS</span> ／ DB <b>ok</b> ／ <b>codex</b> 分组
+    </div>
+    <div class="actions">
+      <button class="btn">⚙ 令牌</button>
+      <button class="btn">⬇ 导出</button>
+      <button class="btn">⬆ 导入</button>
+      <button class="btn primary">＋ 新章</button>
+    </div>
+  </header>
+
+  <main class="split">
+    <!-- LEFT: CHAT -->
+    <section class="chat">
+      <div class="chat-head">
+        <span class="ttl">对话 · 8 条</span>
+        <span class="meta">SESSION / 04</span>
+      </div>
+      <div class="stream">
+        <div class="msg">
+          <div class="who u">我 ▌</div>
+          <div class="body">
+            <div class="text">画一只蹲在书堆里的橘猫，国画风格</div>
+          </div>
+        </div>
+        <div class="msg">
+          <div class="who b">▌AI</div>
+          <div class="body">
+            <div class="text">已生成 2 张候选</div>
+            <div class="img">
+              <img src="https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-359-水墨双重曝光人物海报/example.jpeg" />
+              <img src="https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-123-插画艺术创作图/example.jpeg" />
+            </div>
+          </div>
+        </div>
+        <div class="msg">
+          <div class="who u">我 ▌</div>
+          <div class="body">
+            <div class="text">不错，把第一张的猫换成黑色，眼睛改成绿色</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <select class="pill"><option>GPT Image 2</option></select>
+        <span class="pill active">1024×1024</span>
+        <span class="pill">n=1</span>
+        <span class="spacer"></span>
+        <button class="ico-btn">+ 引用</button>
+        <button class="ico-btn">✨ 润色</button>
+        <button class="ico-btn">↻ 新对话</button>
+      </div>
+
+      <div class="composer">
+        <textarea placeholder="描述你想要的画面…">画一只黑色的猫，绿眼睛，蹲在书堆里，水墨晕染</textarea>
+        <div class="composer-bottom">
+          <span class="hint">↵ 生成 · ⇧↵ 换行 · @ 引用历史图</span>
+          <span class="right"></span>
+          <button class="btn primary">生成 ▶</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: WORKSPACE -->
+    <section class="ws">
+      <nav class="tabs">
+        <div class="tab">大图</div>
+        <div class="tab">分支树</div>
+        <div class="tab">图库</div>
+        <div class="tab active">模板库</div>
+        <div class="tab">区域编辑</div>
+      </nav>
+
+      <div class="ws-body">
+        <div class="rec">
+          <div class="row">
+            <input value="想给我的咖啡店做张极简菜单海报" />
+            <button>推荐 →</button>
+          </div>
+        </div>
+
+        <div class="layout">
+          <aside class="nav">
+            <div class="nav-h">CATEGORY</div>
+            <div class="nav-item"><span>全部</span><span class="ct">442</span></div>
+            <div class="nav-item active"><span>UI与界面</span><span class="ct">62</span></div>
+            <div class="nav-item"><span>海报与排版</span><span class="ct">56</span></div>
+            <div class="nav-item"><span>图表可视化</span><span class="ct">49</span></div>
+            <div class="nav-item"><span>摄影与写实</span><span class="ct">24</span></div>
+            <div class="nav-item"><span>插画艺术</span><span class="ct">23</span></div>
+            <div class="nav-item"><span>商品 · 电商</span><span class="ct">20</span></div>
+            <div class="nav-item"><span>品牌 · 标志</span><span class="ct">20</span></div>
+            <div class="nav-item"><span>人物角色</span><span class="ct">17</span></div>
+            <div class="nav-item"><span>建筑空间</span><span class="ct">16</span></div>
+            <div class="nav-item"><span>其他案例</span><span class="ct">115</span></div>
+          </aside>
+
+          <main>
+            <div class="search">
+              <span class="search-ico">查 / SEARCH</span>
+              <input placeholder="按名称、关键词、标签搜索…" />
+            </div>
+            <div class="grid" id="grid"></div>
+          </main>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+  const samples = [
+    {n:'界面交互设计图', cn:'例 134', cat:'Interface', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-134-界面交互设计图/example.jpeg'},
+    {n:'主题海报版式设计', cn:'例 144', cat:'Editorial', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-144-主题海报版式设计/example.jpeg'},
+    {n:'科普百科图', cn:'例 008', cat:'Information', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-8-科普百科图/example.jpeg'},
+    {n:'奢华魅力海滨摄影', cn:'例 277', cat:'Photography', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-277-奢华魅力黑人女性海滨摄影/example.jpeg'},
+    {n:'插画艺术创作图', cn:'例 123', cat:'Illustration', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-123-插画艺术创作图/example.jpeg'},
+    {n:'古希腊三哲时间轴', cn:'例 375', cat:'Architecture', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-375-古希腊三哲时间轴城市图/example.jpeg'},
+    {n:'Scrapbook 真人迷你', cn:'例 371', cat:'Other', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-371-scrapbook-真人图与迷你分身/example.jpeg'},
+    {n:'水墨双重曝光人物海报', cn:'例 359', cat:'Editorial', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-359-水墨双重曝光人物海报/example.jpeg'},
+    {n:'雅致图案时尚单品', cn:'例 216', cat:'Other', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-216-雅致图案四款时尚单品设计/example.png'},
+    {n:'樱花树下双马尾', cn:'例 208', cat:'Other', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-208-樱花树下害羞双马尾少女/example.jpeg'},
+    {n:'街头炫瓶男模', cn:'例 322', cat:'Other', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-322-街头炫瓶男模/example.jpeg'},
+    {n:'主题海报版式设计', cn:'例 122', cat:'Editorial', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-122-主题海报版式设计/example.jpeg'},
+  ];
+  const grid = document.getElementById('grid');
+  grid.innerHTML = samples.map((s,i) => `
+    <article class="plate">
+      <div class="seal-mark">用</div>
+      <div class="plate-frame"><div class="plate-img"><img src="${s.img}" alt="${s.n}" loading="lazy" decoding="async" /></div></div>
+      <div class="plate-meta">
+        <div class="plate-num"><span class="vm">№ ${String(i+1).padStart(3,'0')}</span> · ${s.cn}</div>
+        <div class="plate-name">${s.n}</div>
+        <div class="plate-cat">${s.cat}</div>
+      </div>
+    </article>
+  `).join('');
+</script>
+</body>
+</html>

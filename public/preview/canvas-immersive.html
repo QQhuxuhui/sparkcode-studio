@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Canvas Immersive · SparkCode</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Inter+Tight:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    /* dynamic accent will be set via JS based on the active image */
+    --accent: #f6c399;
+    --accent-soft: #f6c39922;
+    --bg-0:#0c0c10;
+    --bg-1:#15151c;
+    --bg-glass: rgba(20,20,28,0.55);
+    --bg-glass-strong: rgba(20,20,28,0.78);
+    --line: rgba(255,255,255,0.06);
+    --line-2: rgba(255,255,255,0.12);
+    --ink:#f4f1ec;
+    --ink-soft:#cfc8be;
+    --muted:#7a7468;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; background: var(--bg-0); color: var(--ink); font-family: 'Inter Tight', -apple-system, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; height: 100%; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+  .serif { font-family: 'Cormorant Garamond', serif; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* The hero canvas — current focal image as full-bleed background */
+  .canvas-stage {
+    position: fixed; inset: 0; z-index: 0;
+    background-image: var(--hero-img);
+    background-size: cover; background-position: center;
+    filter: blur(20px) saturate(0.8) brightness(0.4);
+    transform: scale(1.1);
+    transition: filter 1s ease, background-image 1s ease;
+  }
+  .canvas-stage::after { /* color veil tinted by accent */
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse 70% 60% at 50% 40%, transparent 0%, var(--bg-0) 90%);
+  }
+
+  /* Aurora glow at edges that pulses while "generating" */
+  .aurora {
+    position: fixed; inset: 0; pointer-events: none; z-index: 1; mix-blend-mode: screen; opacity: 0.6;
+    background:
+      radial-gradient(ellipse 600px 200px at 50% -50px, var(--accent), transparent 70%),
+      radial-gradient(ellipse 800px 300px at 50% calc(100% + 50px), var(--accent), transparent 70%);
+    animation: aurora-pulse 6s ease-in-out infinite;
+  }
+  @keyframes aurora-pulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 0.85; } }
+
+  /* App grid */
+  .app { position: relative; z-index: 2; height: 100vh; display: grid; grid-template-rows: 64px 1fr 56px; }
+
+  /* Header — slim glass strip */
+  header {
+    display: grid; grid-template-columns: auto 1fr auto; align-items: center; padding: 0 32px; gap: 24px;
+    background: var(--bg-glass); backdrop-filter: blur(28px) saturate(1.2);
+    border-bottom: 1px solid var(--line);
+  }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .brand-mark {
+    width: 32px; height: 32px; border-radius: 8px; background: var(--accent);
+    display:flex; align-items:center; justify-content:center; font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 700; font-size: 22px; color: var(--bg-0);
+    box-shadow: 0 0 24px var(--accent-soft), 0 1px 2px rgba(0,0,0,0.5);
+  }
+  .brand-name { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 500; }
+  .brand-name em { font-style: italic; color: var(--accent); }
+  .brand-meta { display: flex; flex-direction: column; gap: 2px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 0.06em; line-height: 1.2; }
+  .brand-meta b { color: var(--ink-soft); font-weight: 500; }
+
+  .nav { display: flex; gap: 6px; justify-content: center; }
+  .nav-tab {
+    padding: 7px 16px; border-radius: 99px;
+    font-size: 13px; color: var(--ink-soft); cursor: pointer;
+    transition: all .2s ease; background: transparent;
+    border: 1px solid transparent;
+  }
+  .nav-tab:hover { background: rgba(255,255,255,0.06); color: var(--ink); }
+  .nav-tab.active { background: var(--accent); color: var(--bg-0); border-color: var(--accent); font-weight: 500; box-shadow: 0 4px 16px var(--accent-soft); }
+
+  .actions { display: flex; gap: 8px; }
+  .btn {
+    background: rgba(255,255,255,0.04); border: 1px solid var(--line-2); color: var(--ink-soft);
+    padding: 8px 14px; border-radius: 99px; cursor: pointer; font-size: 12px; transition: all .15s;
+  }
+  .btn:hover { background: rgba(255,255,255,0.1); color: var(--ink); border-color: var(--accent); }
+  .btn.primary { background: var(--accent); color: var(--bg-0); border-color: var(--accent); font-weight: 600; }
+  .btn.primary:hover { box-shadow: 0 6px 24px var(--accent-soft); }
+
+  /* Main area */
+  main { display: grid; grid-template-columns: 1fr 460px; min-height: 0; }
+
+  /* Left — gallery floats over the canvas */
+  .gallery-zone { padding: 32px 0 32px 40px; overflow: auto; min-height: 0; }
+  .recommend {
+    background: var(--bg-glass); backdrop-filter: blur(20px) saturate(1.2);
+    border: 1px solid var(--line-2); border-radius: 18px; padding: 22px 24px;
+    margin-right: 32px; margin-bottom: 28px; position: relative; overflow: hidden;
+  }
+  .recommend::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+    background: linear-gradient(180deg, var(--accent), transparent);
+  }
+  .recommend .head { display:flex; align-items:center; gap: 10px; margin-bottom: 14px; font-size: 12px; color: var(--ink-soft); }
+  .recommend .head .star { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 18px; color: var(--accent); font-weight: 600; }
+  .recommend .row { display:flex; gap: 12px; }
+  .recommend input {
+    flex: 1; background: rgba(255,255,255,0.06); border: 1px solid var(--line-2); color: var(--ink); border-radius: 12px;
+    padding: 13px 18px; font-family: 'Inter Tight', sans-serif; font-size: 14px; outline: none;
+    transition: border-color .15s, background .15s;
+  }
+  .recommend input:focus { border-color: var(--accent); background: rgba(255,255,255,0.1); }
+  .recommend input::placeholder { color: var(--muted); }
+
+  /* Filters as soft pills */
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 32px 28px 0; }
+  .fchip {
+    padding: 7px 14px; border-radius: 99px; cursor: pointer; font-size: 13px;
+    color: var(--ink-soft); background: var(--bg-glass);
+    backdrop-filter: blur(16px); border: 1px solid var(--line-2); transition: all .15s;
+  }
+  .fchip:hover { background: rgba(255,255,255,0.1); color: var(--ink); }
+  .fchip.active { background: var(--accent); color: var(--bg-0); border-color: var(--accent); font-weight: 500; }
+  .fchip .ct { font-family: 'JetBrains Mono', monospace; font-size: 11px; opacity: 0.7; margin-left: 6px; }
+
+  /* Templates grid — bento-ish */
+  .grid {
+    display: grid; gap: 12px;
+    grid-template-columns: repeat(4, 1fr);
+    grid-auto-rows: 180px;
+    margin-right: 32px;
+  }
+  .tcard {
+    position: relative; overflow: hidden; border-radius: 14px; cursor: pointer;
+    background: var(--bg-1); border: 1px solid var(--line-2);
+    transition: transform .3s ease, border-color .2s, box-shadow .3s;
+  }
+  .tcard:hover { transform: translateY(-3px); border-color: var(--accent); box-shadow: 0 24px 48px rgba(0,0,0,0.4), 0 0 0 1px var(--accent-soft); }
+  .tcard img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease, filter .25s; filter: saturate(0.92); }
+  .tcard:hover img { transform: scale(1.06); filter: saturate(1.1); }
+  .tcard .cap {
+    position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 16px 14px;
+    background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.85) 100%);
+    transform: translateY(40%); transition: transform .25s ease;
+  }
+  .tcard:hover .cap { transform: translateY(0); }
+  .tcard .cap .nm { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 500; line-height: 1.15; color: var(--ink); }
+  .tcard .cap .ct { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-top: 4px; }
+  .tcard.span-2 { grid-column: span 2; }
+  .tcard.span-2-row { grid-row: span 2; }
+  .tcard.featured { grid-column: span 2; grid-row: span 2; }
+  .tcard.featured .cap .nm { font-size: 28px; }
+  .tcard.featured::before {
+    content:'★ FEATURED'; position: absolute; top: 14px; left: 14px; z-index: 1;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.18em;
+    background: var(--accent); color: var(--bg-0); padding: 4px 10px; border-radius: 99px;
+  }
+
+  /* Right — chat / composer panel — floating glass */
+  aside.composer-panel {
+    padding: 32px 32px 32px 0; min-height: 0; display: flex; flex-direction: column; gap: 20px;
+  }
+  .panel {
+    background: var(--bg-glass); backdrop-filter: blur(28px) saturate(1.2);
+    border: 1px solid var(--line-2); border-radius: 22px;
+    padding: 24px;
+  }
+  .panel.flex1 { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 16px; }
+  .panel-h { font-size: 11px; color: var(--muted); letter-spacing: 0.18em; text-transform: uppercase; }
+  .panel.composer textarea {
+    width: 100%; min-height: 100px; resize: vertical;
+    background: rgba(255,255,255,0.04); border: 1px solid var(--line-2); border-radius: 12px;
+    color: var(--ink); padding: 14px 16px; font-family: 'Inter Tight', sans-serif; font-size: 14px; line-height: 1.6;
+    outline: none; transition: border-color .15s;
+  }
+  .panel.composer textarea:focus { border-color: var(--accent); }
+  .panel.composer .hud { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 14px; }
+  .hud .chip { padding: 5px 12px; border-radius: 99px; background: rgba(255,255,255,0.06); font-size: 11px; color: var(--ink-soft); border: 1px solid var(--line-2); }
+  .hud .chip b { color: var(--ink); margin-left: 4px; }
+  .hud button { margin-left: auto; }
+
+  .stream-empty { color: var(--muted); font-style: italic; font-family: 'Cormorant Garamond', serif; font-size: 18px; text-align: center; padding: 40px 0; }
+
+  /* Footer status bar */
+  footer.bar {
+    background: var(--bg-glass); backdrop-filter: blur(20px); border-top: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: space-between; padding: 0 32px;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 0.06em;
+  }
+  footer.bar .accent-dot { color: var(--accent); }
+  footer.bar .accent-dot::before { content:'●'; margin-right: 6px; animation: aurora-pulse 2s infinite; }
+
+  /* "Now showing" hint top-right */
+  .showing {
+    position: absolute; right: 32px; bottom: 32px; pointer-events: none; z-index: 1;
+    font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 14px; color: var(--ink-soft); opacity: 0.6;
+  }
+  .showing b { color: var(--accent); font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="canvas-stage" id="stage" style="--hero-img: url('https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-359-水墨双重曝光人物海报/example.jpeg');"></div>
+<div class="aurora"></div>
+
+<div class="app">
+  <header>
+    <div class="brand">
+      <div class="brand-mark serif">S</div>
+      <div>
+        <div class="brand-name serif">SparkCode <em>Studio</em></div>
+        <div class="brand-meta"><span><b>Canvas / 模板库</b> · 442 templates · 397 hosted</span></div>
+      </div>
+    </div>
+    <div class="nav">
+      <button class="nav-tab">大图</button>
+      <button class="nav-tab">分支树</button>
+      <button class="nav-tab">图库</button>
+      <button class="nav-tab active">模板库</button>
+      <button class="nav-tab">区域编辑</button>
+    </div>
+    <div class="actions">
+      <button class="btn">⚙ Keys</button>
+      <button class="btn">⬇ Export</button>
+      <button class="btn primary">＋ New Canvas</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="gallery-zone">
+      <div class="recommend">
+        <div class="head">
+          <span class="star">✦</span>
+          <span style="font-style:italic;" class="serif">Tell us what you're imagining—we'll find the right template.</span>
+        </div>
+        <div class="row">
+          <input value="想给我的咖啡店做张极简菜单海报" />
+          <button class="btn primary">Find →</button>
+        </div>
+      </div>
+
+      <div class="filters">
+        <div class="fchip active">All<span class="ct">442</span></div>
+        <div class="fchip">UI / Interface<span class="ct">62</span></div>
+        <div class="fchip">海报与排版<span class="ct">56</span></div>
+        <div class="fchip">图表可视化<span class="ct">49</span></div>
+        <div class="fchip">摄影与写实<span class="ct">24</span></div>
+        <div class="fchip">插画艺术<span class="ct">23</span></div>
+        <div class="fchip">商品 · 电商<span class="ct">20</span></div>
+        <div class="fchip">品牌 · 标志<span class="ct">20</span></div>
+        <div class="fchip">人物角色<span class="ct">17</span></div>
+        <div class="fchip">建筑空间<span class="ct">16</span></div>
+      </div>
+
+      <div class="grid" id="grid"></div>
+    </section>
+
+    <aside class="composer-panel">
+      <div class="panel composer">
+        <div class="panel-h">Composer</div>
+        <div style="height: 14px"></div>
+        <textarea placeholder="Describe what you want to create…" rows="3">画一只蹲在书堆里的猫</textarea>
+        <div class="hud">
+          <span class="chip">model<b>GPT-IMAGE-2</b></span>
+          <span class="chip">size<b>1024</b></span>
+          <span class="chip">n<b>1</b></span>
+          <button class="btn primary">Generate ✨</button>
+        </div>
+      </div>
+
+      <div class="panel flex1">
+        <div class="panel-h">Stream</div>
+        <div class="stream-empty serif">"a quiet canvas — begin with a sentence."</div>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="bar">
+    <span>CANVAS / IMMERSIVE / V1</span>
+    <span><span class="accent-dot">SOCKET LIVE</span> · CODEX KEY · OSS-CN-SHENZHEN · accent picked from current focus</span>
+    <span>↳ ⌘K for command palette</span>
+  </footer>
+</div>
+
+<div class="showing serif">Now showing: <b>例 359</b> — 水墨双重曝光人物海报</div>
+
+<script>
+  // Sample data with optional accent override (otherwise we leave the default)
+  const samples = [
+    {n:'界面交互设计图', cn:'例 134', cat:'UI / Interface',  cls:'',          accent:'#67a5b8', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-134-界面交互设计图/example.jpeg'},
+    {n:'主题海报版式设计', cn:'例 144', cat:'海报与排版',     cls:'',          accent:'#d8a05a', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-144-主题海报版式设计/example.jpeg'},
+    {n:'科普百科图', cn:'例 008', cat:'图表可视化',           cls:'',          accent:'#a8c87a', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-8-科普百科图/example.jpeg'},
+    {n:'奢华魅力海滨摄影', cn:'例 277', cat:'摄影与写实',     cls:'span-2-row', accent:'#e0a07b', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-277-奢华魅力黑人女性海滨摄影/example.jpeg'},
+    {n:'水墨双重曝光人物海报', cn:'例 359', cat:'海报与排版', cls:'featured',   accent:'#f6c399', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-359-水墨双重曝光人物海报/example.jpeg'},
+    {n:'插画艺术创作图', cn:'例 123', cat:'插画与艺术',       cls:'',          accent:'#c89cd0', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-123-插画艺术创作图/example.jpeg'},
+    {n:'古希腊三哲时间轴城市图', cn:'例 375', cat:'建筑空间',  cls:'span-2',    accent:'#bca28c', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-375-古希腊三哲时间轴城市图/example.jpeg'},
+    {n:'Scrapbook 真人迷你', cn:'例 371', cat:'其他案例',     cls:'',          accent:'#e07b9a', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-371-scrapbook-真人图与迷你分身/example.jpeg'},
+    {n:'雅致图案时尚单品', cn:'例 216', cat:'其他案例',       cls:'',          accent:'#c2b58a', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-216-雅致图案四款时尚单品设计/example.png'},
+    {n:'樱花树下双马尾', cn:'例 208', cat:'其他案例',         cls:'',          accent:'#f6b8c2', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-208-樱花树下害羞双马尾少女/example.jpeg'},
+    {n:'街头炫瓶男模', cn:'例 322', cat:'其他案例',           cls:'span-2',    accent:'#a09684', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-322-街头炫瓶男模/example.jpeg'},
+    {n:'主题海报版式设计', cn:'例 122', cat:'海报与排版',     cls:'',          accent:'#d8a05a', img:'https://tern-13004588605.oss-cn-shenzhen.aliyuncs.com/templates/例-122-主题海报版式设计/example.jpeg'},
+  ];
+  const grid = document.getElementById('grid');
+  grid.innerHTML = samples.map(s => `
+    <article class="tcard ${s.cls}" data-img="${s.img}" data-accent="${s.accent}" data-name="${s.n}" data-cn="${s.cn}">
+      <img src="${s.img}" alt="${s.n}" loading="lazy" decoding="async" />
+      <div class="cap">
+        <div class="nm">${s.n}</div>
+        <div class="ct">${s.cn} · ${s.cat}</div>
+      </div>
+    </article>
+  `).join('');
+
+  // Hover → swap focal image + accent
+  const stage = document.getElementById('stage');
+  const showing = document.querySelector('.showing');
+  document.querySelectorAll('.tcard').forEach(card => {
+    card.addEventListener('mouseenter', () => {
+      stage.style.setProperty('--hero-img', `url('${card.dataset.img}')`);
+      document.documentElement.style.setProperty('--accent', card.dataset.accent);
+      document.documentElement.style.setProperty('--accent-soft', card.dataset.accent + '22');
+      showing.innerHTML = `Now showing: <b>${card.dataset.cn}</b> — ${card.dataset.name}`;
+    });
+  });
+</script>
+</body>
+</html>
