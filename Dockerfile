@@ -17,11 +17,17 @@ RUN pnpm build
 # Hono + tsx run server/index.ts directly. tsx is a devDependency, so
 # we install with --prod=false to bring it in without restructuring
 # package.json.
-FROM node:22-alpine AS runtime
+#
+# Debian-slim instead of Alpine so we don't depend on dl-cdn.alpinelinux.org
+# (slow/flaky from CN). Image is ~90MB larger but the build is reliable.
+FROM node:22-bookworm-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production \
     PORT=3001
-RUN corepack enable && apk add --no-cache libc6-compat tini
+RUN corepack enable \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends tini \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile --prod=false && pnpm store prune
@@ -41,5 +47,5 @@ COPY --from=frontend-builder /app/dist ./dist
 EXPOSE 3001
 
 # Use tini as PID 1 so SIGTERM reaches the Node process and shutdown is clean
-ENTRYPOINT ["/sbin/tini", "--"]
+ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["pnpm", "start"]
