@@ -1,20 +1,24 @@
 # ─── SparkCode Studio · production-ish compose ──────────────────────
-# Single full-stack service. The app reads DATABASE_URL from .env (your
-# cloud Postgres at 104.194.91.23:5444 by default). To swap to a local
-# PG container instead, uncomment the `db` service block at the bottom
-# and update DATABASE_URL in .env to: postgres://sparkcode:sparkcode@db:5432/sparkcode_studio
+# Single full-stack service pinned to the Aliyun ACR image. App reads
+# DATABASE_URL from .env (your cloud Postgres at 104.194.91.23:5444 by
+# default). To swap to a local PG container, uncomment the `db` service
+# block at the bottom and set DATABASE_URL=postgres://sparkcode:sparkcode@db:5432/sparkcode_studio
 #
 # Usage:
-#   docker compose up -d --build      # build + run in background
+#   docker compose pull               # fetch the latest published image
+#   docker compose up -d              # run in background
+#   docker compose up -d --build      # rebuild from local Dockerfile instead
 #   docker compose logs -f app        # follow logs
 #   docker compose down               # stop & remove
 
 services:
   app:
+    image: registry.cn-shanghai.aliyuncs.com/hxh_ai/sparkcode-studio:latest
+    # Local build is still possible for development — `docker compose build`
+    # tags the image with the same name above so `up` will pick it up.
     build:
       context: .
       dockerfile: Dockerfile
-    image: sparkcode-studio:latest
     container_name: sparkcode-studio
     restart: unless-stopped
     env_file:
@@ -22,7 +26,8 @@ services:
     ports:
       - "3001:3001"
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/api/health"]
+      # Node-based healthcheck so we don't need wget/curl in the image.
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3001/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 30s
       timeout: 5s
       retries: 3
