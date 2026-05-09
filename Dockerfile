@@ -3,6 +3,11 @@
 # ─── Stage 1: build the frontend bundle ──────────────────────────────
 FROM node:22-alpine AS frontend-builder
 WORKDIR /app
+# Use npmmirror in CN — registry.npmjs.org repeatedly ECONNRESETs from
+# this build host. mirror is a passive fan-out so the lockfile is still
+# valid (pnpm rewrites the host portion of resolved URLs).
+ENV npm_config_registry=https://registry.npmmirror.com \
+    npm_config_fetch_retries=5
 RUN corepack enable
 
 # Layer-cache-friendly: install deps before copying the rest of the source
@@ -23,7 +28,9 @@ RUN pnpm build
 FROM node:22-bookworm-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production \
-    PORT=3001
+    PORT=3001 \
+    npm_config_registry=https://registry.npmmirror.com \
+    npm_config_fetch_retries=5
 RUN corepack enable \
     && apt-get update \
     && apt-get install -y --no-install-recommends tini \
