@@ -18,12 +18,13 @@ type UIStore = {
 
 const SETTINGS_MODEL_KEY = 'conv_image_settings_model';
 
+const DEFAULT_MODEL = 'gemini-3.1-flash-image-preview';
 const initialModel = (() => {
   try {
     const v = localStorage.getItem(SETTINGS_MODEL_KEY);
-    return v || 'gpt-image-2';
+    return v || DEFAULT_MODEL;
   } catch {
-    return 'gpt-image-2';
+    return DEFAULT_MODEL;
   }
 })();
 
