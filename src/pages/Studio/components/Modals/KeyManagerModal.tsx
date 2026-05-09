@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { KEY_GROUPS, loadGroupKeys, saveKeyForGroup } from '../../../../services/keys';
-import { API_BASE } from '../../../../services/api';
 import { toast } from '../../../../lib/utils';
 
 type Props = { firstRun: boolean; onClose: () => void };
@@ -48,9 +47,27 @@ export function KeyManagerModal({ firstRun, onClose }: Props) {
             ? <span className="text-[11px] text-accent font-semibold">首次配置</span>
             : <button onClick={onClose} className="bg-transparent border-0 text-muted text-xl leading-none cursor-pointer hover:text-ink">✕</button>}
         </div>
-        <div className="text-[12px] text-muted my-3.5 mb-[18px] leading-relaxed">
-          后端：<code className="font-mono bg-bg-2 text-ink-soft px-1.5 py-px rounded-sm">{API_BASE}</code>
-          {firstRun && (<><br />请至少填写一个分组的令牌才能开始使用。两个都填则可同时调用 GPT 和 Gemini 模型。</>)}
+        <div className="my-3.5 mb-[18px] bg-accent/[0.06] border border-accent/30 rounded-md px-4 py-3 leading-relaxed">
+          <div className="text-[14px] text-ink font-semibold flex items-center gap-2">
+            <span className="text-[16px]">🔑</span>
+            <span>
+              如果还没有令牌，请前往{' '}
+              <a
+                href="https://sparkcode.top"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-accent underline decoration-accent/50 underline-offset-2 hover:decoration-accent transition-colors font-bold"
+              >
+                https://sparkcode.top
+              </a>
+              {' '}登录创建。
+            </span>
+          </div>
+          {firstRun && (
+            <div className="text-[12px] text-muted mt-2">
+              请至少填写一个分组的令牌才能开始使用。两个都填则可同时调用 GPT 和 Gemini 模型。
+            </div>
+          )}
         </div>
 
         {KEY_GROUPS.map((g) => {
